@@ -773,13 +773,16 @@ void update_gpma(GPMA &gpma, DEV_VEC_KEY &update_keys, DEV_VEC_VALUE &update_val
 
     // step5: rebalance each tree level
     for (SIZE_TYPE level = 0; level <= gpma.tree_height && update_size; level++) {
+        printf("debug: rebalance tree level %d, update_size=%d\n", level, update_size);
         SIZE_TYPE lower_bound = gpma.lower_element[level];
         SIZE_TYPE upper_bound = gpma.upper_element[level];
 
+        LOG_TIME("5.LOOP.before_rebalance")
         // re-balance
         rebalance_batch(level, gpma.segment_length, RAW_PTR(gpma.keys), RAW_PTR(gpma.values), RAW_PTR(update_nodes),
                 RAW_PTR(update_keys), RAW_PTR(update_values), update_size, RAW_PTR(unique_update_nodes),
                 RAW_PTR(update_offset), unique_node_size, lower_bound, upper_bound, RAW_PTR(gpma.row_offset));
+        LOG_TIME("5.LOOP.after_rebalance")
 
         // compact
         compact_insertions(update_nodes, update_keys, update_values, update_size);
