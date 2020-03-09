@@ -5,6 +5,7 @@
 #include <thrust/remove.h>
 #include <thrust/sort.h>
 #include <cub/cub.cuh>
+#include "rdebug.hpp"
 
 #define cErr(errcode) { gpuAssert((errcode), __FILE__, __LINE__); }
 __inline__ __host__ __device__
@@ -736,10 +737,12 @@ void significant_insert(GPMA &gpma, DEV_VEC_KEY &update_keys, DEV_VEC_VALUE &upd
 __host__
 void update_gpma(GPMA &gpma, DEV_VEC_KEY &update_keys, DEV_VEC_VALUE &update_values) {
     SIZE_TYPE ous = update_keys.size();
+    LOG_TIME("enter_update_gpma")
 
     // step1: sort update keys with values
     thrust::sort_by_key(update_keys.begin(), update_keys.end(), update_values.begin());
     cErr(cudaDeviceSynchronize());
+    LOG_TIME("1-2")
 
     // step2: get leaf node of each update (execute del and mod)
     DEV_VEC_SIZE update_nodes(update_keys.size());
@@ -747,6 +750,7 @@ void update_gpma(GPMA &gpma, DEV_VEC_KEY &update_keys, DEV_VEC_VALUE &update_val
     locate_leaf_batch(RAW_PTR(gpma.keys), RAW_PTR(gpma.values), gpma.keys.size(), gpma.segment_length, gpma.tree_height,
             RAW_PTR(update_keys), RAW_PTR(update_values), update_keys.size(), RAW_PTR(update_nodes));
     cErr(cudaDeviceSynchronize());
+    LOG_TIME("2-3")
 
     // step3: extract insertions
     DEV_VEC_SIZE unique_update_nodes(update_keys.size());
@@ -757,6 +761,7 @@ void update_gpma(GPMA &gpma, DEV_VEC_KEY &update_keys, DEV_VEC_VALUE &update_val
     compact_insertions(update_nodes, update_keys, update_values, update_size);
     compress_insertions_by_node(update_nodes, update_size, unique_update_nodes, update_offset, unique_node_size);
     cErr(cudaDeviceSynchronize());
+    LOG_TIME("3-4")
 
     // step4: rebuild for significant update
     int threshold = 5 * 1000 * 1000;
@@ -764,6 +769,7 @@ void update_gpma(GPMA &gpma, DEV_VEC_KEY &update_keys, DEV_VEC_VALUE &update_val
         significant_insert(gpma, update_keys, update_values, update_size);
         return;
     }
+    LOG_TIME("4-5")
 
     // step5: rebalance each tree level
     for (SIZE_TYPE level = 0; level <= gpma.tree_height && update_size; level++) {
@@ -785,6 +791,7 @@ void update_gpma(GPMA &gpma, DEV_VEC_KEY &update_keys, DEV_VEC_VALUE &update_val
         compress_insertions_by_node(update_nodes, update_size, unique_update_nodes, update_offset,
                 unique_node_size);
     }
+    LOG_TIME("5-6")
 
     // step6: rebalance the root node if necessary
     if (update_size > 0) {
@@ -800,6 +807,7 @@ void update_gpma(GPMA &gpma, DEV_VEC_KEY &update_keys, DEV_VEC_VALUE &update_val
                 RAW_PTR(update_keys), RAW_PTR(update_values), update_size, RAW_PTR(unique_update_nodes),
                 RAW_PTR(update_offset), unique_node_size, lower_bound, upper_bound, RAW_PTR(gpma.row_offset));
     }
+    LOG_TIME("6-7 LEAVE update_gpma")
 
     cErr(cudaDeviceSynchronize());
 }

@@ -61,19 +61,23 @@ int main(int argc, char **argv) {
     int num_slide = 100;
     int step = half / num_slide;
 
+    LOG_TIME("before init_csr_gpma")
     GPMA gpma;
     init_csr_gpma(gpma, node_size);
     cudaDeviceSynchronize();
 
+    LOG_TIME("before update_gpma 1")
     update_gpma(gpma, base_keys, base_values);
     thrust::device_vector<SIZE_TYPE> bfs_result(node_size);
     cudaDeviceSynchronize();
 
+    LOG_TIME("before first bfs")
     gpma_bfs(RAW_PTR(gpma.keys), RAW_PTR(gpma.values), RAW_PTR(gpma.row_offset), node_size,
             edge_size, bfs_start_node, RAW_PTR(bfs_result));
     int reach_nodes = node_size - thrust::count(bfs_result.begin(), bfs_result.end(), 0);
     printf("start from node %d, number of reachable nodes: %d\n", bfs_start_node, reach_nodes);
 
+    LOG_TIME("before main loop")
     for (int i = 0; i < num_slide; i++) {
         thrust::host_vector<KEY_TYPE> hk(step * 2);
         for (int j = 0; j < step; j++) {
@@ -95,11 +99,13 @@ int main(int argc, char **argv) {
         cudaDeviceSynchronize();
     }
     printf("Graph is updated.\n");
+    LOG_TIME("before second bfs")
 
     gpma_bfs(RAW_PTR(gpma.keys), RAW_PTR(gpma.values), RAW_PTR(gpma.row_offset), node_size,
             edge_size, bfs_start_node, RAW_PTR(bfs_result));
     reach_nodes = node_size - thrust::count(bfs_result.begin(), bfs_result.end(), 0);
     printf("start from node %d, number of reachable nodes: %d\n", bfs_start_node, reach_nodes);
+    LOG_TIME("after second loop")
 
     return 0;
 }
