@@ -14,7 +14,9 @@ inline int64_t get_time_in_us() {
     prev_time = this_time;
     return delta_time;
 }
-#define LOG_TIME(msg) printf("T+%lld - " msg "\n", get_time_in_us());
+// #define LOG_TIME(msg) printf("T+%lld - " msg "\n", get_time_in_us());
+#define LOG_TIME(msg) {}// printf("T+%lld - " msg "\n", get_time_in_us());
+#define LOG_TIME_2(msg) printf("T+%lld - " msg "\n", get_time_in_us());
 
 #endif
 

@@ -279,8 +279,6 @@ void gpma_bfs(KEY_TYPE *keys, VALUE_TYPE *values, SIZE_TYPE *row_offsets,
     SIZE_TYPE level = 1;
     const SIZE_TYPE THREADS_NUM = 256;
     while (true) {
-        printf("DEBUG: gpma_bfs::ITERATION-\n");
-
         // gather
         SIZE_TYPE BLOCKS_NUM = CALC_BLOCKS_NUM(THREADS_NUM, host_num[0]);
         host_num[0] = 0;

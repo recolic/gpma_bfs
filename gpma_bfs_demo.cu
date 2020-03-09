@@ -76,6 +76,7 @@ int main(int argc, char **argv) {
             edge_size, bfs_start_node, RAW_PTR(bfs_result));
     int reach_nodes = node_size - thrust::count(bfs_result.begin(), bfs_result.end(), 0);
     printf("start from node %d, number of reachable nodes: %d\n", bfs_start_node, reach_nodes);
+    LOG_TIME_2("===============BEGIN MAIN LOOP==================")
 
     LOG_TIME("before main loop")
     for (int i = 0; i < num_slide; i++) {
@@ -98,6 +99,7 @@ int main(int argc, char **argv) {
         update_gpma(gpma, update_keys, update_values);
         cudaDeviceSynchronize();
     }
+    LOG_TIME_2("===============END MAIN LOOP==================")
     printf("Graph is updated.\n");
     LOG_TIME("before second bfs")
 

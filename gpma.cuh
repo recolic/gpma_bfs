@@ -550,13 +550,13 @@ void rebalance_batch(SIZE_TYPE level, SIZE_TYPE seg_length, KEY_TYPE *keys, VALU
         SIZE_TYPE *update_nodes, KEY_TYPE *update_keys, VALUE_TYPE *update_values, SIZE_TYPE update_size,
         SIZE_TYPE *unique_update_nodes, SIZE_TYPE *update_offset, SIZE_TYPE unique_update_size,
         SIZE_TYPE lower_bound, SIZE_TYPE upper_bound, SIZE_TYPE *row_offset) {
+    // TryInsert+ is this function.
 
     SIZE_TYPE update_width = seg_length << level;
 
     if (update_width <= 1024) {
         // func pointer for each template
-        void (*func_arr[10])(SIZE_TYPE, SIZE_TYPE, KEY_TYPE*, VALUE_TYPE*, SIZE_TYPE*, KEY_TYPE*, VALUE_TYPE*,
-                SIZE_TYPE*, SIZE_TYPE*, SIZE_TYPE, SIZE_TYPE, SIZE_TYPE*);
+        decltype(block_rebalancing_kernel) func_arr[10];
         func_arr[0] = block_rebalancing_kernel<2, 1>;
         func_arr[1] = block_rebalancing_kernel<4, 1>;
         func_arr[2] = block_rebalancing_kernel<8, 1>;
