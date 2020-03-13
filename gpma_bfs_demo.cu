@@ -54,15 +54,15 @@ int main(int argc, char **argv) {
         h_base_keys[i] = ((KEY_TYPE) host_x[i] << 32) + host_y[i];
     }
 
-    DEV_VEC_KEY base_keys = h_base_keys;
-    DEV_VEC_VALUE base_values(half, 1);
+    NATIVE_VEC_KEY<GPU> base_keys = h_base_keys;
+    NATIVE_VEC_VALUE<GPU> base_values(half, 1);
     cudaDeviceSynchronize();
 
     int num_slide = 100;
     int step = half / num_slide;
 
     LOG_TIME("before init_csr_gpma")
-    GPMA gpma;
+    GPMA<GPU> gpma;
     init_csr_gpma(gpma, node_size);
     cudaDeviceSynchronize();
 
@@ -90,10 +90,10 @@ int main(int argc, char **argv) {
             hk[j + step] = ((KEY_TYPE) host_x[idx] << 32) + host_y[idx];
         }
 
-        DEV_VEC_VALUE update_values(step * 2);
+        NATIVE_VEC_VALUE<GPU> update_values(step * 2);
         thrust::fill(update_values.begin(), update_values.begin() + step, 1);
         thrust::fill(update_values.begin() + step, update_values.end(), VALUE_NONE);
-        DEV_VEC_KEY update_keys = hk;
+        NATIVE_VEC_KEY<GPU> update_keys = hk;
         cudaDeviceSynchronize();
 
         update_gpma(gpma, update_keys, update_values);
