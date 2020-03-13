@@ -52,9 +52,9 @@ using namespace runtime_info;
 
 
 
-constexpr KEY_TYPE KEY_NONE = 0xFFFFFFFFFFFFFFFF;
-constexpr KEY_TYPE KEY_MAX = 0xFFFFFFFFFFFFFFFE;
-constexpr SIZE_TYPE SIZE_NONE = 0xFFFFFFFF;
+constexpr KEY_TYPE KEY_NONE = (KEY_TYPE)(-1);
+constexpr KEY_TYPE KEY_MAX = KEY_NONE - 1;
+constexpr SIZE_TYPE SIZE_NONE = (SIZE_TYPE)(-1);
 constexpr VALUE_TYPE VALUE_NONE = 0;
 constexpr KEY_TYPE COL_IDX_NONE = 0xFFFFFFFF;
 
