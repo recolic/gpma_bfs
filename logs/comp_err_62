@@ -1,0 +1,184 @@
+root@VM-0-15-ubuntu ~/gpma_bfs# make
+/usr/local/cuda-10.2/bin/nvcc -I. -O3 -std=c++14 -gencode arch=compute_60,code=sm_60 gpma_bfs_demo.cu --cudart static --relocatable-device-code=true -o gpma_bfs_demo
+gpma.cuh(93): warning: the "always_inline" attribute is ignored on non-inline functions
+
+gpma_bfs_demo.cu(16): warning: result of call is not used
+
+gpma_bfs_demo.cu(24): warning: result of call is not used
+
+gpma_bfs_demo.cu(24): warning: result of call is not used
+
+gpma.cuh(93): warning: the "always_inline" attribute is ignored on non-inline functions
+
+gpma_bfs_demo.cu(16): warning: result of call is not used
+
+gpma_bfs_demo.cu(24): warning: result of call is not used
+
+gpma_bfs_demo.cu(24): warning: result of call is not used
+
+gpma_bfs_demo.cu: In function ‘int main(int, char**)’:
+gpma_bfs_demo.cu:79:87: warning: format ‘%lld’ expects argument of type ‘long long int’, but argument 2 has type ‘int64_t {aka long int}’ [-Wformat=]
+     LOG_TIME_2("===============BEGIN MAIN LOOP==================")
+                                                                                       ^
+gpma_bfs_demo.cu:102:85: warning: format ‘%lld’ expects argument of type ‘long long int’, but argument 2 has type ‘int64_t {aka long int}’ [-Wformat=]
+     LOG_TIME_2("===============END MAIN LOOP==================")
+                                                                                     ^
+gpma.cuh: At global scope:
+gpma.cuh:93:34: warning: always_inline function might not be inlinable [-Wattributes]
+ [[gnu::always_inline]] SIZE_TYPE fls(SIZE_TYPE x) {
+                                  ^~~
+gpma_bfs_demo.cu: In function ‘void load_data(const char*, thrust::host_vector<int>&, thrust::host_vector<int>&, int&, int&)’:
+gpma_bfs_demo.cu:16:7: warning: ignoring return value of ‘int fscanf(FILE*, const char*, ...)’, declared with attribute warn_unused_result [-Wunused-result]
+     fscanf(fp, "%d %d", &node_size, &edge_size);
+     ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+gpma_bfs_demo.cu:24:1: warning: ignoring return value of ‘int fscanf(FILE*, const char*, ...)’, declared with attribute warn_unused_result [-Wunused-result]
+         (void) fscanf(fp, "%d %d", &x, &y);
+ ^       ~~~~~~~~~~~~~~~~~~~~~~~~~
+root@VM-0-15-ubuntu ~/gpma_bfs# ./gpma_bfs_demo dataset/pokec.txt 0
+node_num: 1632803, edge_num: 30622564
+Graph file is loaded.
+terminate called after throwing an instance of 'thrust::system::system_error'
+  what():  parallel_for failed: cudaErrorInvalidDeviceFunction: invalid device function
+fish: “./gpma_bfs_demo dataset/pokec.t…” terminated by signal SIGABRT (Abort)
+
+
+
+
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+
+root@VM-0-15-ubuntu ~/gpma_bfs# make
+/usr/local/cuda-10.2/bin/nvcc -I. -O3 -std=c++14 -gencode arch=compute_62,code=sm_62 gpma_bfs_demo.cu --cudart static --relocatable-device-code=true -o gpma_bfs_demo
+gpma.cuh(93): warning: the "always_inline" attribute is ignored on non-inline functions
+
+gpma_bfs_demo.cu(16): warning: result of call is not used
+
+gpma_bfs_demo.cu(24): warning: result of call is not used
+
+gpma_bfs_demo.cu(24): warning: result of call is not used
+
+gpma.cuh(93): warning: the "always_inline" attribute is ignored on non-inline functions
+
+gpma_bfs_demo.cu(16): warning: result of call is not used
+
+gpma_bfs_demo.cu(24): warning: result of call is not used
+
+gpma_bfs_demo.cu(24): warning: result of call is not used
+
+gpma_bfs_demo.cu: In function ‘int main(int, char**)’:
+gpma_bfs_demo.cu:79:87: warning: format ‘%lld’ expects argument of type ‘long long int’, but argument 2 has type ‘int64_t {aka long int}’ [-Wformat=]
+     LOG_TIME_2("===============BEGIN MAIN LOOP==================")
+                                                                                       ^
+gpma_bfs_demo.cu:102:85: warning: format ‘%lld’ expects argument of type ‘long long int’, but argument 2 has type ‘int64_t {aka long int}’ [-Wformat=]
+     LOG_TIME_2("===============END MAIN LOOP==================")
+                                                                                     ^
+gpma.cuh: At global scope:
+gpma.cuh:93:34: warning: always_inline function might not be inlinable [-Wattributes]
+ [[gnu::always_inline]] SIZE_TYPE fls(SIZE_TYPE x) {
+                                  ^~~
+gpma_bfs_demo.cu: In function ‘void load_data(const char*, thrust::host_vector<int>&, thrust::host_vector<int>&, int&, int&)’:
+gpma_bfs_demo.cu:16:7: warning: ignoring return value of ‘int fscanf(FILE*, const char*, ...)’, declared with attribute warn_unused_result [-Wunused-result]
+     fscanf(fp, "%d %d", &node_size, &edge_size);
+     ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+gpma_bfs_demo.cu:24:1: warning: ignoring return value of ‘int fscanf(FILE*, const char*, ...)’, declared with attribute warn_unused_result [-Wunused-result]
+         (void) fscanf(fp, "%d %d", &x, &y);
+ ^       ~~~~~~~~~~~~~~~~~~~~~~~~~
+nvlink error   : Undefined reference to 'cudaGetErrorString' in '/tmp/tmpxft_00001039_00000000-10_gpma_bfs_demo.o'
+nvlink error   : Undefined reference to 'cudaDeviceSynchronize' in '/tmp/tmpxft_00001039_00000000-10_gpma_bfs_demo.o'
+nvlink error   : Undefined reference to 'cudaMalloc' in '/tmp/tmpxft_00001039_00000000-10_gpma_bfs_demo.o'
+nvlink error   : Undefined reference to 'cudaGetParameterBufferV2' in '/tmp/tmpxft_00001039_00000000-10_gpma_bfs_demo.o'
+nvlink error   : Undefined reference to 'cudaLaunchDeviceV2' in '/tmp/tmpxft_00001039_00000000-10_gpma_bfs_demo.o'
+nvlink error   : Undefined reference to 'cudaFree' in '/tmp/tmpxft_00001039_00000000-10_gpma_bfs_demo.o'
+nvlink error   : Undefined reference to 'cudaPeekAtLastError' in '/tmp/tmpxft_00001039_00000000-10_gpma_bfs_demo.o'
+nvlink error   : Undefined reference to 'cudaGetDevice' in '/tmp/tmpxft_00001039_00000000-10_gpma_bfs_demo.o'
+nvlink error   : Undefined reference to 'cudaDeviceGetAttribute' in '/tmp/tmpxft_00001039_00000000-10_gpma_bfs_demo.o'
+nvlink error   : Undefined reference to 'cudaOccupancyMaxActiveBlocksPerMultiprocessorWithFlags' in '/tmp/tmpxft_00001039_00000000-10_gpma_bfs_demo.o'
+Makefile:8: recipe for target 'default' failed
+make: *** [default] Error 255
+
+
+
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+
+
+
+root@VM-0-15-ubuntu ~# nvidia-smi -L
+GPU 0: Tesla T4 (UUID: GPU-fa8be2a7-6a54-ccae-c6b2-d3c349b9d479)
+
+root@VM-0-15-ubuntu ~# nvidia-smi
+Mon Mar 16 02:00:34 2020       
++-----------------------------------------------------------------------------+
+| NVIDIA-SMI 440.33.01    Driver Version: 440.33.01    CUDA Version: 10.2     |
+|-------------------------------+----------------------+----------------------+
+| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+|===============================+======================+======================|
+|   0  Tesla T4            On   | 00000000:00:06.0 Off |                    0 |
+| N/A   27C    P8     9W /  70W |      0MiB / 15109MiB |      0%      Default |
++-------------------------------+----------------------+----------------------+
+                                                                               
++-----------------------------------------------------------------------------+
+| Processes:                                                       GPU Memory |
+|  GPU       PID   Type   Process name                             Usage      |
+|=============================================================================|
+|  No running processes found                                                 |
++-----------------------------------------------------------------------------+
+
+
+
+
+
+
+
+
+root@VM-0-15-ubuntu ~/gpma_bfs# make
+/usr/local/cuda-10.2/bin/nvcc -I. -O3 -std=c++14 -gencode arch=compute_70,code=sm_70 gpma_bfs_demo.cu --cudart static --relocatable-device-code=true -o gpma_bfs_demo
+gpma.cuh(93): warning: the "always_inline" attribute is ignored on non-inline functions
+
+gpma_bfs_demo.cu(16): warning: result of call is not used
+
+gpma_bfs_demo.cu(24): warning: result of call is not used
+
+gpma_bfs_demo.cu(24): warning: result of call is not used
+
+gpma.cuh(93): warning: the "always_inline" attribute is ignored on non-inline functions
+
+gpma_bfs_demo.cu(16): warning: result of call is not used
+
+gpma_bfs_demo.cu(24): warning: result of call is not used
+
+gpma_bfs_demo.cu(24): warning: result of call is not used
+
+gpma_bfs_demo.cu: In function ‘int main(int, char**)’:
+gpma_bfs_demo.cu:79:87: warning: format ‘%lld’ expects argument of type ‘long long int’, but argument 2 has type ‘int64_t {aka long int}’ [-Wformat=]
+     LOG_TIME_2("===============BEGIN MAIN LOOP==================")
+                                                                                       ^
+gpma_bfs_demo.cu:102:85: warning: format ‘%lld’ expects argument of type ‘long long int’, but argument 2 has type ‘int64_t {aka long int}’ [-Wformat=]
+     LOG_TIME_2("===============END MAIN LOOP==================")
+                                                                                     ^
+gpma.cuh: At global scope:
+gpma.cuh:93:34: warning: always_inline function might not be inlinable [-Wattributes]
+ [[gnu::always_inline]] SIZE_TYPE fls(SIZE_TYPE x) {
+                                  ^~~
+gpma_bfs_demo.cu: In function ‘void load_data(const char*, thrust::host_vector<int>&, thrust::host_vector<int>&, int&, int&)’:
+gpma_bfs_demo.cu:16:7: warning: ignoring return value of ‘int fscanf(FILE*, const char*, ...)’, declared with attribute warn_unused_result [-Wunused-result]
+     fscanf(fp, "%d %d", &node_size, &edge_size);
+     ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+gpma_bfs_demo.cu:24:1: warning: ignoring return value of ‘int fscanf(FILE*, const char*, ...)’, declared with attribute warn_unused_result [-Wunused-result]
+         (void) fscanf(fp, "%d %d", &x, &y);
+ ^       ~~~~~~~~~~~~~~~~~~~~~~~~~
+root@VM-0-15-ubuntu ~/gpma_bfs# ./gpma_bfs_demo dataset/pokec.txt 0
+node_num: 1632803, edge_num: 30622564
+Graph file is loaded.
+debug: rebalance tree level 0, update_size=1632803
+debug: rebalance tree level 1, update_size=1632803
+start from node 0, number of reachable nodes: 1334069
+T+1048192753 - ===============BEGIN MAIN LOOP==================
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=4
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=1
+... (working correctly)

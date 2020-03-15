@@ -61,6 +61,8 @@ constexpr KEY_TYPE COL_IDX_NONE = 0xFFFFFFFF;
 constexpr SIZE_TYPE MAX_BLOCKS_NUM = 96 * 8;
 #define CALC_BLOCKS_NUM(ITEMS_PER_BLOCK, CALC_SIZE) min(MAX_BLOCKS_NUM, (CALC_SIZE - 1) / ITEMS_PER_BLOCK + 1)
 
+
+
 template <dev_type_t DEV>
 class GPMA {
 public:
@@ -130,7 +132,8 @@ __host__
 void recalculate_density(GPMA<DEV> &gpma) {
     gpma.lower_element.resize(gpma.tree_height + 1);
     gpma.upper_element.resize(gpma.tree_height + 1);
-    cErr(cudaDeviceSynchronize());
+    if (DEV == GPU)
+        cErr(cudaDeviceSynchronize());
 
     SIZE_TYPE level_length = gpma.segment_length;
     for (SIZE_TYPE i = 0; i <= gpma.tree_height; i++) {
@@ -154,9 +157,7 @@ void recalculate_density(GPMA<DEV> &gpma) {
 }
 
 __device__
-void cub_sort_key_value(KEY_TYPE *keys, VALUE_TYPE *values, SIZE_TYPE size, KEY_TYPE *tmp_keys,
-        VALUE_TYPE *tmp_values) {
-
+void cub_sort_key_value(KEY_TYPE *keys, VALUE_TYPE *values, SIZE_TYPE size, KEY_TYPE *tmp_keys, VALUE_TYPE *tmp_values) {
     void *d_temp_storage = NULL;
     size_t temp_storage_bytes = 0;
 
@@ -175,6 +176,13 @@ void cub_sort_key_value(KEY_TYPE *keys, VALUE_TYPE *values, SIZE_TYPE size, KEY_
 
     cErr(cudaFree(d_temp_storage));
 }
+
+/*
+__host__
+void cub_sort_key_value<CPU>(KEY_TYPE *keys, VALUE_TYPE *values, SIZE_TYPE size, KEY_TYPE *tmp_keys, VALUE_TYPE *tmp_values) {
+    throw std::runtime_error("TODO");
+}
+*/
 
 __device__ SIZE_TYPE handle_del_mod(KEY_TYPE *keys, VALUE_TYPE *values, SIZE_TYPE seg_length, KEY_TYPE key,
         VALUE_TYPE value, SIZE_TYPE leaf) {
@@ -764,6 +772,8 @@ void significant_insert(GPMA<DEV> &gpma, NATIVE_VEC_KEY<DEV> &update_keys, NATIV
 template <dev_type_t DEV>
 __host__
 void update_gpma(GPMA<DEV> &gpma, NATIVE_VEC_KEY<DEV> &update_keys, NATIVE_VEC_VALUE<DEV> &update_values) {
+    printf("DBG: before update_gpma, keys=%d, values=%d, sizes=%d, x,x,x=%d,%d,%d\n", gpma.keys.size(), gpma.values.size(), gpma.row_offset.size(), gpma.segment_length, gpma.tree_height, gpma.row_num);
+
     SIZE_TYPE ous = update_keys.size();
     LOG_TIME("enter_update_gpma")
 

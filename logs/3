@@ -1,0 +1,475 @@
+node_num: 1632803, edge_num: 30622564
+Graph file is loaded.
+DBG: before update_gpma, keys=4, values=4, sizes=1632804, x,x,x=2,1,1632803
+debug: rebalance tree level 0, update_size=1632803
+debug: rebalance tree level 1, update_size=1632803
+DBG: before update_gpma, keys=2097152, values=2097152, sizes=1632804, x,x,x=16,17,1632803
+start from node 0, number of reachable nodes: 1334069
+T+693579953 - ===============BEGIN MAIN LOOP==================
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=4
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=1
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=1
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=5
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=15
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=23
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=44
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=71
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=111
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=125
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=176
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=225
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=272
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=348
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=363
+debug: rebalance tree level 2, update_size=8
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=487
+debug: rebalance tree level 2, update_size=4
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=565
+debug: rebalance tree level 2, update_size=10
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=675
+debug: rebalance tree level 2, update_size=9
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=726
+debug: rebalance tree level 2, update_size=12
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=852
+debug: rebalance tree level 2, update_size=12
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=934
+debug: rebalance tree level 2, update_size=18
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=1064
+debug: rebalance tree level 2, update_size=18
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=1158
+debug: rebalance tree level 2, update_size=25
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=1312
+debug: rebalance tree level 2, update_size=31
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=1323
+debug: rebalance tree level 2, update_size=34
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=1518
+debug: rebalance tree level 2, update_size=52
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=1664
+debug: rebalance tree level 2, update_size=91
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=1646
+debug: rebalance tree level 2, update_size=62
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=1860
+debug: rebalance tree level 2, update_size=70
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=2082
+debug: rebalance tree level 2, update_size=114
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=2127
+debug: rebalance tree level 2, update_size=109
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=2309
+debug: rebalance tree level 2, update_size=123
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=2282
+debug: rebalance tree level 2, update_size=141
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=2591
+debug: rebalance tree level 2, update_size=171
+debug: rebalance tree level 3, update_size=1
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=2530
+debug: rebalance tree level 2, update_size=147
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=2685
+debug: rebalance tree level 2, update_size=179
+debug: rebalance tree level 3, update_size=2
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=2756
+debug: rebalance tree level 2, update_size=216
+debug: rebalance tree level 3, update_size=2
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=3011
+debug: rebalance tree level 2, update_size=248
+debug: rebalance tree level 3, update_size=3
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=3000
+debug: rebalance tree level 2, update_size=217
+debug: rebalance tree level 3, update_size=4
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=3124
+debug: rebalance tree level 2, update_size=251
+debug: rebalance tree level 3, update_size=1
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=3155
+debug: rebalance tree level 2, update_size=279
+debug: rebalance tree level 3, update_size=3
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=3387
+debug: rebalance tree level 2, update_size=286
+debug: rebalance tree level 3, update_size=8
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=3660
+debug: rebalance tree level 2, update_size=325
+debug: rebalance tree level 3, update_size=5
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=3665
+debug: rebalance tree level 2, update_size=304
+debug: rebalance tree level 3, update_size=6
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=3778
+debug: rebalance tree level 2, update_size=346
+debug: rebalance tree level 3, update_size=4
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=3876
+debug: rebalance tree level 2, update_size=384
+debug: rebalance tree level 3, update_size=7
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=3881
+debug: rebalance tree level 2, update_size=399
+debug: rebalance tree level 3, update_size=9
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=4018
+debug: rebalance tree level 2, update_size=438
+debug: rebalance tree level 3, update_size=10
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=4094
+debug: rebalance tree level 2, update_size=409
+debug: rebalance tree level 3, update_size=15
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=4248
+debug: rebalance tree level 2, update_size=482
+debug: rebalance tree level 3, update_size=14
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=4354
+debug: rebalance tree level 2, update_size=472
+debug: rebalance tree level 3, update_size=15
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=4424
+debug: rebalance tree level 2, update_size=503
+debug: rebalance tree level 3, update_size=14
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=4497
+debug: rebalance tree level 2, update_size=520
+debug: rebalance tree level 3, update_size=25
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=4688
+debug: rebalance tree level 2, update_size=581
+debug: rebalance tree level 3, update_size=27
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=4651
+debug: rebalance tree level 2, update_size=552
+debug: rebalance tree level 3, update_size=18
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=4706
+debug: rebalance tree level 2, update_size=551
+debug: rebalance tree level 3, update_size=25
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=4926
+debug: rebalance tree level 2, update_size=694
+debug: rebalance tree level 3, update_size=23
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=4995
+debug: rebalance tree level 2, update_size=586
+debug: rebalance tree level 3, update_size=9
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=4963
+debug: rebalance tree level 2, update_size=648
+debug: rebalance tree level 3, update_size=12
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=5110
+debug: rebalance tree level 2, update_size=644
+debug: rebalance tree level 3, update_size=27
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=5240
+debug: rebalance tree level 2, update_size=737
+debug: rebalance tree level 3, update_size=34
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=5520
+debug: rebalance tree level 2, update_size=739
+debug: rebalance tree level 3, update_size=37
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=5256
+debug: rebalance tree level 2, update_size=723
+debug: rebalance tree level 3, update_size=39
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=5432
+debug: rebalance tree level 2, update_size=785
+debug: rebalance tree level 3, update_size=36
+debug: rebalance tree level 4, update_size=3
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=5552
+debug: rebalance tree level 2, update_size=845
+debug: rebalance tree level 3, update_size=41
+debug: rebalance tree level 4, update_size=3
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=5611
+debug: rebalance tree level 2, update_size=812
+debug: rebalance tree level 3, update_size=37
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=5699
+debug: rebalance tree level 2, update_size=802
+debug: rebalance tree level 3, update_size=26
+debug: rebalance tree level 4, update_size=1
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=5744
+debug: rebalance tree level 2, update_size=881
+debug: rebalance tree level 3, update_size=32
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=5896
+debug: rebalance tree level 2, update_size=916
+debug: rebalance tree level 3, update_size=52
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=6036
+debug: rebalance tree level 2, update_size=972
+debug: rebalance tree level 3, update_size=53
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=6011
+debug: rebalance tree level 2, update_size=917
+debug: rebalance tree level 3, update_size=38
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=6018
+debug: rebalance tree level 2, update_size=945
+debug: rebalance tree level 3, update_size=50
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=6218
+debug: rebalance tree level 2, update_size=978
+debug: rebalance tree level 3, update_size=45
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=6317
+debug: rebalance tree level 2, update_size=978
+debug: rebalance tree level 3, update_size=76
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=6288
+debug: rebalance tree level 2, update_size=1060
+debug: rebalance tree level 3, update_size=69
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=6433
+debug: rebalance tree level 2, update_size=1038
+debug: rebalance tree level 3, update_size=50
+debug: rebalance tree level 4, update_size=1
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=6518
+debug: rebalance tree level 2, update_size=1061
+debug: rebalance tree level 3, update_size=79
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=6426
+debug: rebalance tree level 2, update_size=1158
+debug: rebalance tree level 3, update_size=69
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=6705
+debug: rebalance tree level 2, update_size=1100
+debug: rebalance tree level 3, update_size=90
+debug: rebalance tree level 4, update_size=3
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=6812
+debug: rebalance tree level 2, update_size=1175
+debug: rebalance tree level 3, update_size=66
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=6827
+debug: rebalance tree level 2, update_size=1231
+debug: rebalance tree level 3, update_size=104
+debug: rebalance tree level 4, update_size=3
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=6684
+debug: rebalance tree level 2, update_size=1160
+debug: rebalance tree level 3, update_size=85
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=6839
+debug: rebalance tree level 2, update_size=1266
+debug: rebalance tree level 3, update_size=106
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=6961
+debug: rebalance tree level 2, update_size=1202
+debug: rebalance tree level 3, update_size=93
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=7086
+debug: rebalance tree level 2, update_size=1326
+debug: rebalance tree level 3, update_size=97
+debug: rebalance tree level 4, update_size=3
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=6944
+debug: rebalance tree level 2, update_size=1226
+debug: rebalance tree level 3, update_size=85
+debug: rebalance tree level 4, update_size=2
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=7129
+debug: rebalance tree level 2, update_size=1333
+debug: rebalance tree level 3, update_size=120
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=7093
+debug: rebalance tree level 2, update_size=1333
+debug: rebalance tree level 3, update_size=113
+debug: rebalance tree level 4, update_size=2
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=7235
+debug: rebalance tree level 2, update_size=1361
+debug: rebalance tree level 3, update_size=106
+debug: rebalance tree level 4, update_size=1
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=7181
+debug: rebalance tree level 2, update_size=1284
+debug: rebalance tree level 3, update_size=104
+debug: rebalance tree level 4, update_size=4
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=7512
+debug: rebalance tree level 2, update_size=1332
+debug: rebalance tree level 3, update_size=107
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=7374
+debug: rebalance tree level 2, update_size=1407
+debug: rebalance tree level 3, update_size=125
+debug: rebalance tree level 4, update_size=3
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=7320
+debug: rebalance tree level 2, update_size=1365
+debug: rebalance tree level 3, update_size=134
+debug: rebalance tree level 4, update_size=2
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=7352
+debug: rebalance tree level 2, update_size=1378
+debug: rebalance tree level 3, update_size=152
+debug: rebalance tree level 4, update_size=5
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=7444
+debug: rebalance tree level 2, update_size=1453
+debug: rebalance tree level 3, update_size=151
+debug: rebalance tree level 4, update_size=3
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=7668
+debug: rebalance tree level 2, update_size=1418
+debug: rebalance tree level 3, update_size=136
+debug: rebalance tree level 4, update_size=1
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=7502
+debug: rebalance tree level 2, update_size=1405
+debug: rebalance tree level 3, update_size=127
+debug: rebalance tree level 4, update_size=1
+DBG: before update_gpma, keys=33554432, values=33554432, sizes=1632804, x,x,x=16,21,1632803
+debug: rebalance tree level 0, update_size=153112
+debug: rebalance tree level 1, update_size=7601
+debug: rebalance tree level 2, update_size=1564
+debug: rebalance tree level 3, update_size=131
+debug: rebalance tree level 4, update_size=6
+T+1051246 - ===============END MAIN LOOP==================
+Graph is updated.
+start from node 0, number of reachable nodes: 1333927
