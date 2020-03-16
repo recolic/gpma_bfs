@@ -57,12 +57,11 @@ int main(int argc, char **argv) {
     NATIVE_VEC_VALUE<GPU> base_values(half, 1);
     cudaDeviceSynchronize();
 
-    int num_slide = 10;
+    int num_slide = 1;
     int step = half / num_slide;
 
     LOG_TIME("before init_csr_gpma")
-    GPMA<GPU> gpma;
-    init_csr_gpma(gpma, node_size);
+    GPMA<GPU> gpma(node_size);
     cudaDeviceSynchronize();
 
     LOG_TIME("before update_gpma 1")

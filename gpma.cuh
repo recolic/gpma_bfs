@@ -61,7 +61,11 @@ constexpr KEY_TYPE COL_IDX_NONE = 0xFFFFFFFF;
 constexpr SIZE_TYPE MAX_BLOCKS_NUM = 96 * 8;
 #define CALC_BLOCKS_NUM(ITEMS_PER_BLOCK, CALC_SIZE) min(MAX_BLOCKS_NUM, (CALC_SIZE - 1) / ITEMS_PER_BLOCK + 1)
 
-
+template <dev_type_t DEV> class GPMA;
+template <dev_type_t DEV>
+void update_gpma(GPMA<DEV> &gpma, NATIVE_VEC_KEY<DEV> &update_keys, NATIVE_VEC_VALUE<DEV> &update_values);
+template <dev_type_t DEV>
+void recalculate_density(GPMA<DEV> &gpma);
 
 template <dev_type_t DEV>
 class GPMA {
@@ -86,6 +90,44 @@ public:
 
     inline int get_size() {
         return keys.size();
+    }
+
+    __host__ void init_gpma_impl() {
+        keys.resize(4, KEY_NONE);
+        values.resize(4);
+        cErr(cudaDeviceSynchronize());
+        segment_length = 2;
+        tree_height = 1;
+    
+        // the minimal tree structure has 2 levels with 4 elements' space, and the leaf segment's length is 2
+        // put two MAX_KEY to keep minimal valid structure
+        keys[0] = keys[2] = KEY_MAX;
+        values[0] = values[2] = 1;
+    
+        recalculate_density(*this);
+    }
+    
+    template<typename T>
+    struct col_idx_none {
+        typedef T argument_type;
+        typedef T result_type;
+        __host__ __device__
+        T operator()(const T &x) const {
+            return (x << 32) + COL_IDX_NONE;
+        }
+    };
+    __host__ GPMA(SIZE_TYPE row_num) {
+        row_num = row_num;
+        row_offset.resize(row_num + 1, 0);
+    
+        NATIVE_VEC_KEY<DEV> row_wall(row_num);
+        NATIVE_VEC_VALUE<DEV> tmp_value(row_num, 1);
+        cErr(cudaDeviceSynchronize());
+    
+        thrust::tabulate(row_wall.begin(), row_wall.end(), col_idx_none<KEY_TYPE>());
+        init_gpma_impl();
+        cErr(cudaDeviceSynchronize());
+        update_gpma(*this, row_wall, tmp_value);
     }
 };
 
@@ -773,6 +815,7 @@ template <dev_type_t DEV>
 __host__
 void update_gpma(GPMA<DEV> &gpma, NATIVE_VEC_KEY<DEV> &update_keys, NATIVE_VEC_VALUE<DEV> &update_values) {
     printf("DBG: before update_gpma, keys=%d, values=%d, sizes=%d, x,x,x=%d,%d,%d\n", gpma.keys.size(), gpma.values.size(), gpma.row_offset.size(), gpma.segment_length, gpma.tree_height, gpma.row_num);
+    printf("DBG: update_gpma args, update_keys.size=%d, values.size=%d\n", update_keys.size(), update_values.size());
 
     SIZE_TYPE ous = update_keys.size();
     LOG_TIME("enter_update_gpma")
@@ -853,44 +896,4 @@ void update_gpma(GPMA<DEV> &gpma, NATIVE_VEC_KEY<DEV> &update_keys, NATIVE_VEC_V
     cErr(cudaDeviceSynchronize());
 }
 
-template <dev_type_t DEV>
-__host__
-void init_gpma(GPMA<DEV> &gpma) {
-    gpma.keys.resize(4, KEY_NONE);
-    gpma.values.resize(4);
-    cErr(cudaDeviceSynchronize());
-    gpma.segment_length = 2;
-    gpma.tree_height = 1;
 
-    // the minimal tree structure has 2 levels with 4 elements' space, and the leaf segment's length is 2
-    // put two MAX_KEY to keep minimal valid structure
-    gpma.keys[0] = gpma.keys[2] = KEY_MAX;
-    gpma.values[0] = gpma.values[2] = 1;
-
-    recalculate_density(gpma);
-}
-
-template<typename T>
-struct col_idx_none {
-    typedef T argument_type;
-    typedef T result_type;
-    __host__ __device__
-    T operator()(const T &x) const {
-        return (x << 32) + COL_IDX_NONE;
-    }
-};
-template <dev_type_t DEV>
-__host__
-void init_csr_gpma(GPMA<DEV> &gpma, SIZE_TYPE row_num) {
-    gpma.row_num = row_num;
-    gpma.row_offset.resize(row_num + 1, 0);
-
-    NATIVE_VEC_KEY<DEV> row_wall(row_num);
-    NATIVE_VEC_VALUE<DEV> tmp_value(row_num, 1);
-    cErr(cudaDeviceSynchronize());
-
-    thrust::tabulate(row_wall.begin(), row_wall.end(), col_idx_none<KEY_TYPE>());
-    init_gpma(gpma);
-    cErr(cudaDeviceSynchronize());
-    update_gpma(gpma, row_wall, tmp_value);
-}

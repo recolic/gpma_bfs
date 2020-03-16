@@ -62,8 +62,7 @@ int main(int argc, char **argv) {
     int step = half / num_slide;
 
     LOG_TIME("before init_csr_gpma")
-    GPMA<GPU> gpma;
-    init_csr_gpma(gpma, node_size);
+    GPMA<GPU> gpma(node_size);
     cudaDeviceSynchronize();
 
     LOG_TIME("before update_gpma 1")

@@ -1,0 +1,18 @@
+root@VM-0-15-ubuntu ~/gpma_bfs# ./mini dataset/mini.txt  1
+node_num: 4, edge_num: 2
+Graph file is loaded.
+DBG: before update_gpma, keys=4, values=4, sizes=5, x,x,x=2,1,4
+DBG: update_gpma args, update_keys.size=4, values.size=4
+debug: rebalance tree level 0, update_size=4
+debug: rebalance tree level 1, update_size=4
+DBG: before update_gpma, keys=8, values=8, sizes=5, x,x,x=4,1,4
+DBG: update_gpma args, update_keys.size=1, values.size=1
+debug: rebalance tree level 0, update_size=1
+debug: rebalance tree level 1, update_size=1
+T+81510767 - ===============BEGIN MAIN LOOP==================
+DBG: before update_gpma, keys=16, values=16, sizes=5, x,x,x=4,2,4
+DBG: update_gpma args, update_keys.size=2, values.size=2
+debug: rebalance tree level 0, update_size=1
+T+554 - ===============END MAIN LOOP==================
+Graph is updated.
+

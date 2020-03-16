@@ -1,8 +1,8 @@
-NVCC = /usr/local/cuda-10.2/bin/nvcc
+NVCC ?= /usr/local/cuda-10.2/bin/nvcc
 
 # $(arch) for Turing architecture.
 # requires: cuda 10.2
-arch = 35
+arch = 75
 
 default:
 	$(NVCC) -I. -O3 -std=c++14 -gencode arch=compute_$(arch),code=sm_$(arch) gpma_bfs_demo.cu --cudart static --relocatable-device-code=true -o gpma_bfs_demo
