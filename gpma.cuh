@@ -113,10 +113,9 @@ public:
         typedef T result_type;
         __host__ __device__
         T operator()(const T &x) const {
-            return (x << 32) + COL_IDX_NONE;
         }
     };
-    __host__ GPMA(SIZE_TYPE row_num) {
+    GPMA(SIZE_TYPE row_num) {
         row_num = row_num;
         row_offset.resize(row_num + 1, 0);
     
@@ -124,7 +123,9 @@ public:
         NATIVE_VEC_VALUE<DEV> tmp_value(row_num, 1);
         cErr(cudaDeviceSynchronize());
     
-        thrust::tabulate(row_wall.begin(), row_wall.end(), col_idx_none<KEY_TYPE>());
+        thrust::tabulate(row_wall.begin(), row_wall.end(), [](auto x){
+            return (x << 32) + COL_IDX_NONE;
+        });
         init_gpma_impl();
         cErr(cudaDeviceSynchronize());
         update_gpma(*this, row_wall, tmp_value);
