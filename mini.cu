@@ -68,8 +68,6 @@ int main(int argc, char **argv) {
     update_gpma(gpma, base_keys, base_values);
     cudaDeviceSynchronize();
 
-    LOG_TIME("before first bfs")
-    LOG_TIME_2("===============BEGIN MAIN LOOP==================")
 
     LOG_TIME("before main loop")
     for (int i = 0; i < num_slide; i++) {
@@ -92,11 +90,8 @@ int main(int argc, char **argv) {
         update_gpma(gpma, update_keys, update_values);
         cudaDeviceSynchronize();
     }
-    LOG_TIME_2("===============END MAIN LOOP==================")
     printf("Graph is updated.\n");
-    LOG_TIME("before second bfs")
 
-    LOG_TIME("after second loop")
 
     return 0;
 }

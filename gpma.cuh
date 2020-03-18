@@ -17,7 +17,9 @@ void gpuAssert(cudaError_t code, const char *file, int line) {
     }
 }
 
-typedef unsigned long long KEY_TYPE;
+#define MAKE_64b(high, low) (((uint64_t)(high) << 32) + low)
+
+typedef uint64_t KEY_TYPE;
 typedef char VALUE_TYPE;
 typedef unsigned int SIZE_TYPE;
 typedef KEY_TYPE* KEY_PTR;
@@ -50,8 +52,6 @@ namespace runtime_info {
 }
 using namespace runtime_info;
 
-
-
 constexpr KEY_TYPE KEY_NONE = (KEY_TYPE)(-1);
 constexpr KEY_TYPE KEY_MAX = KEY_NONE - 1;
 constexpr SIZE_TYPE SIZE_NONE = (SIZE_TYPE)(-1);
@@ -76,10 +76,10 @@ public:
     SIZE_TYPE segment_length;
     SIZE_TYPE tree_height;
 
-    double density_lower_thres_leaf = 0.08;
-    double density_lower_thres_root = 0.42;
-    double density_upper_thres_root = 0.84;
-    double density_upper_thres_leaf = 0.92;
+    static constexpr double density_lower_thres_leaf = 0.08;
+    static constexpr double density_lower_thres_root = 0.42;
+    static constexpr double density_upper_thres_leaf = 0.92;
+    static constexpr double density_upper_thres_root = 0.84;
 
     thrust::host_vector<SIZE_TYPE> lower_element;
     thrust::host_vector<SIZE_TYPE> upper_element;
@@ -92,7 +92,9 @@ public:
         return keys.size();
     }
 
-    __host__ void init_gpma_impl() {
+    void init_gpma_members(SIZE_TYPE row_num) {
+        this->row_num = row_num;
+        row_offset.resize(row_num + 1, 0);
         keys.resize(4, KEY_NONE);
         values.resize(4);
         cErr(cudaDeviceSynchronize());
@@ -106,30 +108,25 @@ public:
     
         recalculate_density(*this);
     }
-    
-    template<typename T>
-    struct col_idx_none {
-        typedef T argument_type;
-        typedef T result_type;
-        __host__ __device__
-        T operator()(const T &x) const {
-        }
-    };
-    GPMA(SIZE_TYPE row_num) {
-        row_num = row_num;
-        row_offset.resize(row_num + 1, 0);
-    
+    void init_gpma_insertions() {
         NATIVE_VEC_KEY<DEV> row_wall(row_num);
         NATIVE_VEC_VALUE<DEV> tmp_value(row_num, 1);
         cErr(cudaDeviceSynchronize());
-    
-        thrust::tabulate(row_wall.begin(), row_wall.end(), [](auto x){
-            return (x << 32) + COL_IDX_NONE;
-        });
-        init_gpma_impl();
+        auto _transform_func_impl = [=] __device__ (KEY_TYPE x) {return MAKE_64b(x, COL_IDX_NONE);};
+        thrust::tabulate(row_wall.begin(), row_wall.end(), _transform_func_impl);
         cErr(cudaDeviceSynchronize());
         update_gpma(*this, row_wall, tmp_value);
     }
+    GPMA(SIZE_TYPE row_num) {
+        init_gpma_members(row_num);
+        init_gpma_insertions();
+    }
+
+    void print_status() const {
+        rlib::printfln("DBG: GPMA_DUMP: keys={}, values={}, row_offset={}, seg_length,tree_height,row_num={},{},{}", keys.size(), values.size(), row_offset.size(), segment_length, tree_height, row_num);
+        rlib::printfln("DBG: GPMA_DUMP: keys={}, values={}, row_offset={}", rlib::printable_iter(keys), rlib::printable_iter(values_for_print(values)), rlib::printable_iter(row_offset));
+    }
+
 };
 
 __host__ __device__
@@ -173,10 +170,9 @@ void memset_kernel(T *data, T value, SIZE_TYPE size) {
 template <dev_type_t DEV>
 __host__
 void recalculate_density(GPMA<DEV> &gpma) {
+    // This function is HOST ONLY.
     gpma.lower_element.resize(gpma.tree_height + 1);
     gpma.upper_element.resize(gpma.tree_height + 1);
-    if (DEV == GPU)
-        cErr(cudaDeviceSynchronize());
 
     SIZE_TYPE level_length = gpma.segment_length;
     for (SIZE_TYPE i = 0; i <= gpma.tree_height; i++) {
@@ -660,18 +656,12 @@ void rebalance_batch(SIZE_TYPE level, SIZE_TYPE seg_length, KEY_TYPE *keys, VALU
     cErr(cudaDeviceSynchronize());
 }
 
-struct three_tuple_first_none {
-    typedef thrust::tuple<SIZE_TYPE, KEY_TYPE, VALUE_TYPE> Tuple;
-    __host__ __device__
-    bool operator()(const Tuple &a) {
-        return SIZE_NONE == thrust::get<0>(a);
-    }
-};
 template <dev_type_t DEV>
 void compact_insertions(NATIVE_VEC_SIZE<DEV> &update_nodes, NATIVE_VEC_KEY<DEV> &update_keys, NATIVE_VEC_VALUE<DEV> &update_values, SIZE_TYPE &update_size) {
+    auto three_tuple_first_none = [=] __device__ (const thrust::tuple<SIZE_TYPE, KEY_TYPE, VALUE_TYPE> &a) {return SIZE_NONE == thrust::get<0>(a);};
     auto zip_begin = thrust::make_zip_iterator(
             thrust::make_tuple(update_nodes.begin(), update_keys.begin(), update_values.begin()));
-    auto zip_end = thrust::remove_if(zip_begin, zip_begin + update_size, three_tuple_first_none());
+    auto zip_end = thrust::remove_if(zip_begin, zip_begin + update_size, three_tuple_first_none);
     cErr(cudaDeviceSynchronize());
     update_size = zip_end - zip_begin;
 }
@@ -751,29 +741,26 @@ void up_level_batch(SIZE_TYPE *update_nodes, SIZE_TYPE update_size, SIZE_TYPE up
     cErr(cudaDeviceSynchronize());
 }
 
-struct kv_tuple_none {
-    typedef thrust::tuple<KEY_TYPE, VALUE_TYPE> Tuple;
-    __host__ __device__
-    bool operator()(const Tuple &a) {
-        return KEY_NONE == thrust::get<0>(a) || VALUE_NONE == thrust::get<1>(a);
-    }
-};
 template <dev_type_t DEV>
 __host__
-int resize_gpma(GPMA<DEV> &gpma, NATIVE_VEC_KEY<DEV> &update_keys, NATIVE_VEC_VALUE<DEV> &update_values, SIZE_TYPE update_size) {
+int resize_gpma(GPMA<DEV> &gpma, SIZE_TYPE increased_size) {
+    auto kv_tuple_none = [] __device__ (const thrust::tuple<KEY_TYPE, VALUE_TYPE> &a) {
+        return KEY_NONE == thrust::get<0>(a) || VALUE_NONE == thrust::get<1>(a);
+    };
     auto zip_begin = thrust::make_zip_iterator(thrust::make_tuple(gpma.keys.begin(), gpma.values.begin()));
-    auto zip_end = thrust::remove_if(zip_begin, zip_begin + gpma.keys.size(), kv_tuple_none());
+    auto zip_end = thrust::remove_if(zip_begin, zip_begin + gpma.keys.size(), kv_tuple_none);
     cErr(cudaDeviceSynchronize());
     SIZE_TYPE compacted_size = zip_end - zip_begin;
     thrust::fill(gpma.keys.begin() + compacted_size, gpma.keys.end(), KEY_NONE);
     cErr(cudaDeviceSynchronize());
 
-    SIZE_TYPE merge_size = compacted_size + update_size;
+    SIZE_TYPE merge_size = compacted_size + increased_size;
     SIZE_TYPE original_tree_size = gpma.keys.size();
 
     SIZE_TYPE tree_size = 4;
     while (floor(gpma.density_upper_thres_root * tree_size) < merge_size)
-        tree_size <<= 1;
+        tree_size *= 2;
+    rlib::printfln("resize gpma: FROM keys.size=(BUFSIZE={})(COMPACTED={}), tree_height={}, seg_length={}", original_tree_size, compacted_size, gpma.tree_height, gpma.segment_length);
     gpma.segment_length = 1 << (fls(fls(tree_size)) - 1);
     gpma.tree_height = fls(tree_size / gpma.segment_length) - 1;
 
@@ -781,6 +768,7 @@ int resize_gpma(GPMA<DEV> &gpma, NATIVE_VEC_KEY<DEV> &update_keys, NATIVE_VEC_VA
     gpma.values.resize(tree_size);
     cErr(cudaDeviceSynchronize());
     recalculate_density(gpma);
+    rlib::printfln("               TO keys.size={}, tree_height={}, seg_length={}", tree_size, gpma.tree_height, gpma.segment_length);
 
     return compacted_size;
 }
@@ -788,7 +776,7 @@ int resize_gpma(GPMA<DEV> &gpma, NATIVE_VEC_KEY<DEV> &update_keys, NATIVE_VEC_VA
 template <dev_type_t DEV>
 __host__
 void significant_insert(GPMA<DEV> &gpma, NATIVE_VEC_KEY<DEV> &update_keys, NATIVE_VEC_VALUE<DEV> &update_values, int update_size) {
-    int valid_size = resize_gpma(gpma, update_keys, update_values, update_size);
+    int valid_size = resize_gpma(gpma, update_size);
     thrust::copy(update_keys.begin(), update_keys.begin() + update_size, gpma.keys.begin() + valid_size);
     thrust::copy(update_values.begin(), update_values.begin() + update_size, gpma.values.begin() + valid_size);
 
@@ -815,8 +803,8 @@ void significant_insert(GPMA<DEV> &gpma, NATIVE_VEC_KEY<DEV> &update_keys, NATIV
 template <dev_type_t DEV>
 __host__
 void update_gpma(GPMA<DEV> &gpma, NATIVE_VEC_KEY<DEV> &update_keys, NATIVE_VEC_VALUE<DEV> &update_values) {
-    printf("DBG: before update_gpma, keys=%d, values=%d, sizes=%d, x,x,x=%d,%d,%d\n", gpma.keys.size(), gpma.values.size(), gpma.row_offset.size(), gpma.segment_length, gpma.tree_height, gpma.row_num);
-    printf("DBG: update_gpma args, update_keys.size=%d, values.size=%d\n", update_keys.size(), update_values.size());
+    rlib::printfln("DBG: (ENTER UPDATE)update_gpma args, update_keys={}, values={}", rlib::printable_iter(update_keys), rlib::printable_iter(values_for_print(update_values)));
+    gpma.print_status();
 
     SIZE_TYPE ous = update_keys.size();
     LOG_TIME("enter_update_gpma")
@@ -840,7 +828,7 @@ void update_gpma(GPMA<DEV> &gpma, NATIVE_VEC_KEY<DEV> &update_keys, NATIVE_VEC_V
     cErr(cudaDeviceSynchronize());
     SIZE_TYPE update_size = update_nodes.size();
     SIZE_TYPE unique_node_size = 0;
-    compact_insertions(update_nodes, update_keys, update_values, update_size);
+    compact_insertions(update_nodes, update_keys, update_values, update_size); // update_size was modified to be compacted. update_nodes,keys,values removed if nodes is NONE.
     compress_insertions_by_node(update_nodes, update_size, unique_update_nodes, update_offset, unique_node_size);
     cErr(cudaDeviceSynchronize());
     LOG_TIME("3-4")
@@ -880,7 +868,7 @@ void update_gpma(GPMA<DEV> &gpma, NATIVE_VEC_KEY<DEV> &update_keys, NATIVE_VEC_V
 
     // step6: rebalance the root node if necessary
     if (update_size > 0) {
-        resize_gpma(gpma, update_keys, update_values, update_size);
+        resize_gpma(gpma, update_size);
 
         SIZE_TYPE level = gpma.tree_height;
         SIZE_TYPE lower_bound = gpma.lower_element[level];
@@ -895,6 +883,10 @@ void update_gpma(GPMA<DEV> &gpma, NATIVE_VEC_KEY<DEV> &update_keys, NATIVE_VEC_V
     LOG_TIME("6-7 LEAVE update_gpma")
 
     cErr(cudaDeviceSynchronize());
+    rlib::printfln("DBG: (LEAVE UPDATE)");
+    gpma.print_status();
+    rlib::printfln("DBG: (LEAVE UPDATE) =====================================================================================");
+
 }
 
 

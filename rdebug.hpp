@@ -2,7 +2,7 @@
 #define RLIB_IMPL_GPMA_DEBUG_HPP_ 1
 
 #include <time.h>
-#include <cstdio>
+#include <rlib/stdio.hpp>
 #include <cstdint>
 
 inline int64_t get_time_in_us() {
@@ -17,6 +17,11 @@ inline int64_t get_time_in_us() {
 // #define LOG_TIME(msg) printf("T+%lld - " msg "\n", get_time_in_us());
 #define LOG_TIME(msg) {}// printf("T+%lld - " msg "\n", get_time_in_us());
 #define LOG_TIME_2(msg) printf("T+%lld - " msg "\n", get_time_in_us());
+
+    template <typename T>
+    auto values_for_print(const T &values) {
+        return std::vector<uint32_t>(values.begin(), values.end());
+    }
 
 #endif
 
