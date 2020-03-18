@@ -363,51 +363,51 @@ void block_redispatch_kernel(KEY_TYPE *keys, VALUE_TYPE *values, SIZE_TYPE rebal
     typedef cub::BlockRadixSort<KEY_TYPE, THREAD_PER_BLOCK, ITEM_PER_THREAD, VALUE_TYPE> BlockRadixSortT;
 
     __shared__ union {
-            typename BlockKeyLoadT::TempStorage key_load;
-            typename BlockValueLoadT::TempStorage value_load;
-            typename BlockKeyStoreT::TempStorage key_store;
-            typename BlockValueStoreT::TempStorage value_store;
-            typename BlockRadixSortT::TempStorage sort;
-        } temp_storage;
+        typename BlockKeyLoadT::TempStorage key_load;
+        typename BlockValueLoadT::TempStorage value_load;
+        typename BlockKeyStoreT::TempStorage key_store;
+        typename BlockValueStoreT::TempStorage value_store;
+        typename BlockRadixSortT::TempStorage sort;
+    } temp_storage;
 
-        KEY_TYPE thread_keys[ITEM_PER_THREAD];
-        VALUE_TYPE thread_values[ITEM_PER_THREAD];
-        BlockKeyLoadT(temp_storage.key_load).Load(block_keys, thread_keys);
-        BlockValueLoadT(temp_storage.value_load).Load(block_values, thread_values);
-        __syncthreads();
+    KEY_TYPE thread_keys[ITEM_PER_THREAD];
+    VALUE_TYPE thread_values[ITEM_PER_THREAD];
+    BlockKeyLoadT(temp_storage.key_load).Load(block_keys, thread_keys);
+    BlockValueLoadT(temp_storage.value_load).Load(block_values, thread_values);
+    __syncthreads();
 
-        BlockRadixSortT(temp_storage.sort).Sort(thread_keys, thread_values);
-        __syncthreads();
+    BlockRadixSortT(temp_storage.sort).Sort(thread_keys, thread_values);
+    __syncthreads();
 
-        BlockKeyStoreT(temp_storage.key_store).Store(block_keys, thread_keys);
-        BlockValueStoreT(temp_storage.value_store).Store(block_values, thread_values);
-        __syncthreads();
+    BlockKeyStoreT(temp_storage.key_store).Store(block_keys, thread_keys);
+    BlockValueStoreT(temp_storage.value_store).Store(block_values, thread_values);
+    __syncthreads();
 
-        // step3: evenly re-dispatch KVs to leaf segments
-        KEY_TYPE frac = rebalance_width / seg_length;
-        KEY_TYPE deno = merge_size;
-        for (SIZE_TYPE i = threadIdx.x; i < merge_size; i += blockDim.x) {
-            keys[i] = KEY_NONE;
-        }
-        __syncthreads();
+    // step3: evenly re-dispatch KVs to leaf segments
+    KEY_TYPE frac = rebalance_width / seg_length;
+    KEY_TYPE deno = merge_size;
+    for (SIZE_TYPE i = threadIdx.x; i < merge_size; i += blockDim.x) {
+        keys[i] = KEY_NONE;
+    }
+    __syncthreads();
 
-        for (SIZE_TYPE i = threadIdx.x; i < merge_size; i += blockDim.x) {
-            SIZE_TYPE seg_idx = (SIZE_TYPE) (frac * i / deno);
-            SIZE_TYPE seg_lane = (SIZE_TYPE) (frac * i % deno / frac);
-            SIZE_TYPE proj_location = seg_idx * seg_length + seg_lane;
+    for (SIZE_TYPE i = threadIdx.x; i < merge_size; i += blockDim.x) {
+        SIZE_TYPE seg_idx = (SIZE_TYPE) (frac * i / deno);
+        SIZE_TYPE seg_lane = (SIZE_TYPE) (frac * i % deno / frac);
+        SIZE_TYPE proj_location = seg_idx * seg_length + seg_lane;
 
-            KEY_TYPE cur_key = block_keys[i];
-            VALUE_TYPE cur_value = block_values[i];
-            keys[proj_location] = cur_key;
-            values[proj_location] = cur_value;
+        KEY_TYPE cur_key = block_keys[i];
+        VALUE_TYPE cur_value = block_values[i];
+        keys[proj_location] = cur_key;
+        values[proj_location] = cur_value;
 
-            // addition for csr
-            if ((cur_key & COL_IDX_NONE) == COL_IDX_NONE) {
-                SIZE_TYPE cur_row = (SIZE_TYPE) (cur_key >> 32);
-                row_offset[cur_row + 1] = proj_location + update_node;
-            }
+        // addition for csr
+        if ((cur_key & COL_IDX_NONE) == COL_IDX_NONE) {
+            SIZE_TYPE cur_row = (SIZE_TYPE) (cur_key >> 32);
+            row_offset[cur_row + 1] = proj_location + update_node;
         }
     }
+}
 
 template<SIZE_TYPE THREAD_PER_BLOCK, SIZE_TYPE ITEM_PER_THREAD>
 __global__
