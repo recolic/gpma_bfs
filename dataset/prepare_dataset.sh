@@ -1,5 +1,8 @@
 #!/bin/bash
 
+NODE_MAX="$1"
+[[ $NODE_MAX = "" ]] && NODE_MAX=999999999
+
 # download dataset
 if [[ ! -f soc-pokec-relationships.txt ]]; then
 	echo 'downloading graph dataset...'
@@ -18,6 +21,8 @@ with open('soc-pokec-relationships.txt', 'r') as f:
     for line in f.readlines():
         a, b = line.strip().split('\t')
         a, b = int(a), int(b)
+        if a > $NODE_MAX or b > $NODE_MAX:
+            continue
         edges.append((a, b))
         node_size = max(node_size, a)
         node_size = max(node_size, b)
