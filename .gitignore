@@ -3,3 +3,4 @@
 *.o
 gpma_bfs_demo
 mini
+logs/

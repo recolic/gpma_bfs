@@ -4,11 +4,8 @@
 
 #define FULL_MASK 0xffffffff
 
-template<SIZE_TYPE THREADS_NUM>
-__global__
-void gpma_bfs_gather_kernel(SIZE_TYPE *node_queue, SIZE_TYPE *node_queue_offset,
-        SIZE_TYPE *edge_queue, SIZE_TYPE *edge_queue_offset,
-        KEY_TYPE *keys, VALUE_TYPE *values, SIZE_TYPE *row_offsets) {
+template <SIZE_TYPE THREADS_NUM>
+__global__ void gpma_bfs_gather_kernel(SIZE_TYPE *node_queue, SIZE_TYPE *node_queue_offset, SIZE_TYPE *edge_queue, SIZE_TYPE *edge_queue_offset, KEY_TYPE *keys, VALUE_TYPE *values, SIZE_TYPE *row_offsets) {
 
     typedef cub::BlockScan<SIZE_TYPE, THREADS_NUM> BlockScan;
     __shared__ typename BlockScan::TempStorage block_temp_storage;
@@ -60,7 +57,7 @@ void gpma_bfs_gather_kernel(SIZE_TYPE *node_queue, SIZE_TYPE *node_queue_offset,
                 if (gather < gather_end) {
                     KEY_TYPE cur_key = keys[gather];
                     VALUE_TYPE cur_value = values[gather];
-                    neighbour = (SIZE_TYPE) (cur_key & COL_IDX_NONE);
+                    neighbour = (SIZE_TYPE)(cur_key & COL_IDX_NONE);
                     thread_data_in = (neighbour == COL_IDX_NONE || cur_value == VALUE_NONE) ? 0 : 1;
                 } else
                     thread_data_in = 0;
@@ -101,7 +98,7 @@ void gpma_bfs_gather_kernel(SIZE_TYPE *node_queue, SIZE_TYPE *node_queue_offset,
                 if (gather < gather_end) {
                     KEY_TYPE cur_key = keys[gather];
                     VALUE_TYPE cur_value = values[gather];
-                    neighbour = (SIZE_TYPE) (cur_key & COL_IDX_NONE);
+                    neighbour = (SIZE_TYPE)(cur_key & COL_IDX_NONE);
                     thread_data_in = (neighbour == COL_IDX_NONE || cur_value == VALUE_NONE) ? 0 : 1;
                 } else
                     thread_data_in = 0;
@@ -143,7 +140,7 @@ void gpma_bfs_gather_kernel(SIZE_TYPE *node_queue, SIZE_TYPE *node_queue_offset,
             if (thread_id < min(remain, THREADS_NUM)) {
                 KEY_TYPE cur_key = keys[comm2[thread_id]];
                 VALUE_TYPE cur_value = values[comm2[thread_id]];
-                neighbour = (SIZE_TYPE) (cur_key & COL_IDX_NONE);
+                neighbour = (SIZE_TYPE)(cur_key & COL_IDX_NONE);
                 thread_data = (neighbour == COL_IDX_NONE || cur_value == VALUE_NONE) ? 0 : 1;
             } else
                 thread_data = 0;
@@ -170,11 +167,8 @@ void gpma_bfs_gather_kernel(SIZE_TYPE *node_queue, SIZE_TYPE *node_queue_offset,
     }
 }
 
-template<SIZE_TYPE THREADS_NUM>
-__global__
-void gpma_bfs_contract_kernel(SIZE_TYPE *edge_queue, SIZE_TYPE *edge_queue_offset,
-        SIZE_TYPE *node_queue, SIZE_TYPE *node_queue_offset,
-        SIZE_TYPE level, SIZE_TYPE *label, SIZE_TYPE *bitmap) {
+template <SIZE_TYPE THREADS_NUM>
+__global__ void gpma_bfs_contract_kernel(SIZE_TYPE *edge_queue, SIZE_TYPE *edge_queue_offset, SIZE_TYPE *node_queue, SIZE_TYPE *node_queue_offset, SIZE_TYPE level, SIZE_TYPE *label, SIZE_TYPE *bitmap) {
 
     typedef cub::BlockScan<SIZE_TYPE, THREADS_NUM> BlockScan;
     __shared__ typename BlockScan::TempStorage temp_storage;
@@ -202,7 +196,8 @@ void gpma_bfs_contract_kernel(SIZE_TYPE *edge_queue, SIZE_TYPE *edge_queue_offse
         SIZE_TYPE valid = 0;
 
         do {
-            if (cta_offset + thread_id >= edge_queue_offset[0]) break;
+            if (cta_offset + thread_id >= edge_queue_offset[0])
+                break;
             neighbour = edge_queue[cta_offset + thread_id];
 
             // warp cull
@@ -216,15 +211,18 @@ void gpma_bfs_contract_kernel(SIZE_TYPE *edge_queue, SIZE_TYPE *edge_queue_offse
             }
 
             // history cull
-            if (cta1_cache[neighbour % HASH_KEY1] == neighbour) break;
-            if (cta2_cache[neighbour % HASH_KEY2] == neighbour) break;
+            if (cta1_cache[neighbour % HASH_KEY1] == neighbour)
+                break;
+            if (cta2_cache[neighbour % HASH_KEY2] == neighbour)
+                break;
             cta1_cache[neighbour % HASH_KEY1] = neighbour;
             cta2_cache[neighbour % HASH_KEY2] = neighbour;
 
             // bitmap check
             SIZE_TYPE bit_loc = 1 << (neighbour % 32);
             SIZE_TYPE bit_chunk = bitmap[neighbour / 32];
-            if (bit_chunk & bit_loc) break;
+            if (bit_chunk & bit_loc)
+                break;
             bitmap[neighbour / 32] = bit_chunk + bit_loc;
 
             SIZE_TYPE ret = atomicCAS(label + neighbour, 0, level);
@@ -249,9 +247,7 @@ void gpma_bfs_contract_kernel(SIZE_TYPE *edge_queue, SIZE_TYPE *edge_queue_offse
     }
 }
 
-__host__
-void gpma_bfs(KEY_TYPE *keys, VALUE_TYPE *values, SIZE_TYPE *row_offsets,
-        SIZE_TYPE node_size, SIZE_TYPE edge_size, SIZE_TYPE start_node, SIZE_TYPE *results) {
+__host__ void gpma_bfs(KEY_TYPE *keys, VALUE_TYPE *values, SIZE_TYPE *row_offsets, SIZE_TYPE node_size, SIZE_TYPE edge_size, SIZE_TYPE start_node, SIZE_TYPE *results) {
 
     cudaMemset(results, 0, sizeof(SIZE_TYPE) * node_size);
     SIZE_TYPE *bitmap;
@@ -283,8 +279,7 @@ void gpma_bfs(KEY_TYPE *keys, VALUE_TYPE *values, SIZE_TYPE *row_offsets,
         SIZE_TYPE BLOCKS_NUM = CALC_BLOCKS_NUM(THREADS_NUM, host_num[0]);
         host_num[0] = 0;
         cudaMemcpy(edge_queue_offset, host_num, sizeof(SIZE_TYPE), cudaMemcpyHostToDevice);
-        gpma_bfs_gather_kernel<THREADS_NUM> <<<BLOCKS_NUM, THREADS_NUM>>>(node_queue, node_queue_offset,
-                edge_queue, edge_queue_offset, keys, values, row_offsets);
+        gpma_bfs_gather_kernel<THREADS_NUM><<<BLOCKS_NUM, THREADS_NUM>>>(node_queue, node_queue_offset, edge_queue, edge_queue_offset, keys, values, row_offsets);
 
         // contract
         level++;
@@ -292,11 +287,11 @@ void gpma_bfs(KEY_TYPE *keys, VALUE_TYPE *values, SIZE_TYPE *row_offsets,
         cudaMemcpy(host_num, edge_queue_offset, sizeof(SIZE_TYPE), cudaMemcpyDeviceToHost);
         BLOCKS_NUM = CALC_BLOCKS_NUM(THREADS_NUM, host_num[0]);
 
-        gpma_bfs_contract_kernel<THREADS_NUM> <<<BLOCKS_NUM, THREADS_NUM>>>(edge_queue, edge_queue_offset,
-                node_queue, node_queue_offset, level, results, bitmap);
+        gpma_bfs_contract_kernel<THREADS_NUM><<<BLOCKS_NUM, THREADS_NUM>>>(edge_queue, edge_queue_offset, node_queue, node_queue_offset, level, results, bitmap);
         cudaMemcpy(host_num, node_queue_offset, sizeof(SIZE_TYPE), cudaMemcpyDeviceToHost);
 
-        if (0 == host_num[0]) break;
+        if (0 == host_num[0])
+            break;
     }
 
     cudaFree(bitmap);

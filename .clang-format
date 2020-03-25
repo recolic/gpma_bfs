@@ -1,0 +1,7 @@
+BasedOnStyle: LLVM
+IndentWidth: 4
+ColumnLimit: 0
+AlwaysBreakTemplateDeclarations: Yes
+
+FixNamespaceComments: true
+NamespaceIndentation: Inner
