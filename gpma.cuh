@@ -596,7 +596,6 @@ __device__ void compact_kernel_gpu(SIZE_TYPE size, KEY_TYPE *keys, VALUE_TYPE *v
     SIZE_TYPE THREADS_NUM = 32;
     SIZE_TYPE BLOCKS_NUM = CALC_BLOCKS_NUM(THREADS_NUM, size);
     label_key_whether_none_kernel<<<BLOCKS_NUM, THREADS_NUM>>>(label, keys, values, size);
-    cErr(cudaDeviceSynchronize());
 
     // exscan
     cudaExclusiveSum(label, exscan, size);
@@ -724,6 +723,7 @@ __global__ void rebalancing_kernel(SIZE_TYPE unique_update_size, SIZE_TYPE seg_l
 
         // compact
         compact_kernel_gpu(update_width, key, value, compacted_size, tmp_keys, tmp_values, tmp_exscan, tmp_label);
+        anySync<GPU>(); // Necessary!
 
         // judge whether fit the density threshold
         SIZE_TYPE interval_a = update_offset[i];
