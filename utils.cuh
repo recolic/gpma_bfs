@@ -100,8 +100,8 @@ void anyRunLengthEncoding(const SIZE_TYPE *inputVec, SIZE_TYPE inputLen, SIZE_TY
         cErr(cub::DeviceRunLengthEncode::Encode(temp_storage, temp_storage_bytes, inputVec, outputVec, outputLenVec, outputLen, inputLen));
         anySync<DEV>(); // TODO: test and remove them.
         anyMalloc<DEV>(&temp_storage, temp_storage_bytes);
-        anySync<DEV>();
         cErr(cub::DeviceRunLengthEncode::Encode(temp_storage, temp_storage_bytes, inputVec, outputVec, outputLenVec, outputLen, inputLen));
+        anySync<DEV>();
         anyFree<DEV>(temp_storage);
 
         SIZE_TYPE tmp;
@@ -124,10 +124,9 @@ __host__ __device__ void cudaExclusiveSum(const SIZE_TYPE *inputVec, SIZE_TYPE *
     void *temp_storage = NULL;
     size_t temp_storage_bytes = 0;
     cErr(cub::DeviceScan::ExclusiveSum(temp_storage, temp_storage_bytes, inputVec, outputVec, len));
-    anySync<GPU>();
     anyMalloc<GPU>(&temp_storage, temp_storage_bytes);
-    anySync<GPU>();
     cErr(cub::DeviceScan::ExclusiveSum(temp_storage, temp_storage_bytes, inputVec, outputVec, len));
+    anySync<GPU>();
     anyFree<GPU>(temp_storage);
 }
 template <dev_type_t DEV>

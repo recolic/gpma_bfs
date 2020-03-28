@@ -160,6 +160,7 @@ __device__ void cub_sort_key_value(KEY_TYPE *keys, VALUE_TYPE *values, SIZE_TYPE
     cErr(cub::DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_bytes, keys, tmp_keys, values, tmp_values, size));
     cErr(cudaMalloc(&d_temp_storage, temp_storage_bytes));
     cErr(cub::DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_bytes, keys, tmp_keys, values, tmp_values, size));
+    anySync<GPU>();
 
     SIZE_TYPE THREADS_NUM = 128;
     SIZE_TYPE BLOCKS_NUM = CALC_BLOCKS_NUM(THREADS_NUM, size);
@@ -771,7 +772,7 @@ template <dev_type_t DEV>
 void rebalance_batch(SIZE_TYPE level, SIZE_TYPE seg_length, KEY_TYPE *keys, VALUE_TYPE *values, SIZE_TYPE *update_nodes, KEY_TYPE *update_keys, VALUE_TYPE *update_values, SIZE_TYPE update_size, SIZE_TYPE *unique_update_nodes, SIZE_TYPE *update_offset, SIZE_TYPE unique_update_size, SIZE_TYPE lower_bound, SIZE_TYPE upper_bound, SIZE_TYPE *row_offset) {
     // TryInsert+ is this function.
     SIZE_TYPE update_width = seg_length << level; // real seg_length of this level
-    if (false && update_width <= 1024) {
+    if (update_width <= 1024) {
         assert(IsPowerOfTwo(update_width));
         if (DEV == GPU) {
             // func pointer for each template
