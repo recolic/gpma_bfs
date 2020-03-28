@@ -85,6 +85,14 @@ __host__ __device__ void anyFree<GPU>(void *ptr) {
     cErr(cudaFree(ptr));
 }
 
+template <dev_type_t DEV>
+void anyMemset(void *dst, int value, size_t count) {
+    if(DEV == GPU)
+        cErr(cudaMemset(dst, value, count));
+    else
+        memset(dst, value, count);
+}
+
 template <dev_type_t DEV_SRC, dev_type_t DEV_DST>
 void anyMemcpy(void *dst, const void *src, size_t count) {
     cudaMemcpyKind kind = DEV_SRC == GPU ? (DEV_DST == GPU ? cudaMemcpyDeviceToDevice : cudaMemcpyDeviceToHost) : (DEV_DST == GPU ? cudaMemcpyHostToDevice : cudaMemcpyHostToHost);

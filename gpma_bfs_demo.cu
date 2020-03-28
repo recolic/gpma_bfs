@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
     cudaDeviceSynchronize();
 
     LOG_TIME("before first bfs")
-    gpma_bfs(RAW_PTR(gpma.keys), RAW_PTR(gpma.values), RAW_PTR(gpma.row_offset), node_size, edge_size, bfs_start_node, RAW_PTR(bfs_result));
+    gpma_bfs<GPU>(RAW_PTR(gpma.keys), RAW_PTR(gpma.values), RAW_PTR(gpma.row_offset), node_size, edge_size, bfs_start_node, RAW_PTR(bfs_result));
     int reach_nodes = node_size - thrust::count(bfs_result.begin(), bfs_result.end(), 0);
     printf("start from node %d, number of reachable nodes: %d\n", bfs_start_node, reach_nodes);
 
@@ -98,7 +98,7 @@ int main(int argc, char **argv) {
     printf("Graph is updated.\n");
     LOG_TIME("before second bfs")
 
-    gpma_bfs(RAW_PTR(gpma.keys), RAW_PTR(gpma.values), RAW_PTR(gpma.row_offset), node_size, edge_size, bfs_start_node, RAW_PTR(bfs_result));
+    gpma_bfs<GPU>(RAW_PTR(gpma.keys), RAW_PTR(gpma.values), RAW_PTR(gpma.row_offset), node_size, edge_size, bfs_start_node, RAW_PTR(bfs_result));
     reach_nodes = node_size - thrust::count(bfs_result.begin(), bfs_result.end(), 0);
     printf("start from node %d, number of reachable nodes: %d\n", bfs_start_node, reach_nodes);
     LOG_TIME("after second bfs")
