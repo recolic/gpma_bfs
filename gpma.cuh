@@ -167,6 +167,7 @@ __device__ void cub_sort_key_value(KEY_TYPE *keys, VALUE_TYPE *values, SIZE_TYPE
     memcpy_kernel<VALUE_TYPE><<<BLOCKS_NUM, THREADS_NUM>>>(values, tmp_values, size);
 
     cErr(cudaFree(d_temp_storage));
+    anySync<GPU>();
 }
 
 __host__ __device__ SIZE_TYPE handle_del_mod(KEY_TYPE *keys, VALUE_TYPE *values, SIZE_TYPE seg_length, KEY_TYPE key, VALUE_TYPE value, SIZE_TYPE leaf) {
@@ -596,12 +597,14 @@ __device__ void compact_kernel_gpu(SIZE_TYPE size, KEY_TYPE *keys, VALUE_TYPE *v
     SIZE_TYPE THREADS_NUM = 32;
     SIZE_TYPE BLOCKS_NUM = CALC_BLOCKS_NUM(THREADS_NUM, size);
     label_key_whether_none_kernel<<<BLOCKS_NUM, THREADS_NUM>>>(label, keys, values, size);
+    anySync<GPU>();
 
     // exscan
     cudaExclusiveSum(label, exscan, size);
 
     // copy compacted kv to tmp, and set the original to none
     copy_compacted_kv_kernel<<<BLOCKS_NUM, THREADS_NUM>>>(exscan, keys, values, size, tmp_keys, tmp_values, compacted_size);
+    anySync<GPU>();
 }
 
 __forceinline__ __host__ __device__ void redispatch_loop_body(size_t i, KEY_TYPE *tmp_keys, VALUE_TYPE *tmp_values, KEY_TYPE *keys, VALUE_TYPE *values, SIZE_TYPE update_width, SIZE_TYPE seg_length, SIZE_TYPE merge_size, SIZE_TYPE *row_offset, SIZE_TYPE update_node) {
@@ -742,15 +745,18 @@ __global__ void rebalancing_kernel(SIZE_TYPE unique_update_size, SIZE_TYPE seg_l
 
             // set SIZE_NONE for executed updates
             memset_kernel<SIZE_TYPE><<<BLOCKS_NUM, THREADS_NUM>>>(update_nodes + interval_a, SIZE_NONE, interval_size);
+            anySync<GPU>(); // Necessary here, since there's multiple CUDA stream.
 
             cub_sort_key_value(tmp_keys, tmp_values, merge_size, key, value);
 
             // re-dispatch
             BLOCKS_NUM = CALC_BLOCKS_NUM(THREADS_NUM, update_width);
             memset_kernel<KEY_TYPE><<<BLOCKS_NUM, THREADS_NUM>>>(key, KEY_NONE, update_width);
+            anySync<GPU>();
 
             BLOCKS_NUM = CALC_BLOCKS_NUM(THREADS_NUM, merge_size);
             redispatch_kernel<<<BLOCKS_NUM, THREADS_NUM>>>(tmp_keys, tmp_values, key, value, update_width, seg_length, merge_size, row_offset, update_node);
+            anySync<GPU>();
         }
     }
 
@@ -765,7 +771,7 @@ template <dev_type_t DEV>
 void rebalance_batch(SIZE_TYPE level, SIZE_TYPE seg_length, KEY_TYPE *keys, VALUE_TYPE *values, SIZE_TYPE *update_nodes, KEY_TYPE *update_keys, VALUE_TYPE *update_values, SIZE_TYPE update_size, SIZE_TYPE *unique_update_nodes, SIZE_TYPE *update_offset, SIZE_TYPE unique_update_size, SIZE_TYPE lower_bound, SIZE_TYPE upper_bound, SIZE_TYPE *row_offset) {
     // TryInsert+ is this function.
     SIZE_TYPE update_width = seg_length << level; // real seg_length of this level
-    if (update_width <= 1024) {
+    if (false && update_width <= 1024) {
         assert(IsPowerOfTwo(update_width));
         if (DEV == GPU) {
             // func pointer for each template
@@ -816,7 +822,7 @@ void rebalance_batch(SIZE_TYPE level, SIZE_TYPE seg_length, KEY_TYPE *keys, VALU
         }
     }
 
-    anySync<DEV>();
+    anySync<DEV>(); // after previous kernel launch
 }
 
 // this function is working for cpu

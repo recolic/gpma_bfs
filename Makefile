@@ -7,7 +7,7 @@ SM ?= 50
 
 OMP_FLAGS = -Xcompiler -fopenmp
 
-NVFLAGS = -I. -O0 -std=c++14 -arch sm_$(SM) --relocatable-device-code=true --extended-lambda $(OMP_FLAGS) -g
+NVFLAGS = -I. -O3 -std=c++14 -arch sm_$(SM) --relocatable-device-code=true --extended-lambda $(OMP_FLAGS) -g
 #  --cudart static
 #         --gpu-architecture=sm_50' is equivalent to 'nvcc --gpu-architecture=compute_50
 #         --gpu-code=sm_50,compute_50'.
