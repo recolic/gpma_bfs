@@ -281,7 +281,12 @@ __host__ void gpma_bfs(KEY_TYPE *keys, VALUE_TYPE *values, SIZE_TYPE *row_offset
         SIZE_TYPE BLOCKS_NUM = CALC_BLOCKS_NUM(THREADS_NUM, host_num[0]);
         host_num[0] = 0;
         anyMemcpy<CPU, DEV>(edge_queue_offset, host_num, sizeof(SIZE_TYPE));
-        gpma_bfs_gather_kernel<THREADS_NUM><<<BLOCKS_NUM, THREADS_NUM>>>(node_queue, node_queue_offset, edge_queue, edge_queue_offset, keys, values, row_offsets);
+        if(DEV == GPU) {
+            gpma_bfs_gather_kernel<THREADS_NUM><<<BLOCKS_NUM, THREADS_NUM>>>(node_queue, node_queue_offset, edge_queue, edge_queue_offset, keys, values, row_offsets);
+        }
+        else {
+            
+        }
 
         // contract
         level++;
@@ -289,7 +294,12 @@ __host__ void gpma_bfs(KEY_TYPE *keys, VALUE_TYPE *values, SIZE_TYPE *row_offset
         anyMemcpy<DEV, CPU>(host_num, edge_queue_offset, sizeof(SIZE_TYPE));
         BLOCKS_NUM = CALC_BLOCKS_NUM(THREADS_NUM, host_num[0]);
 
-        gpma_bfs_contract_kernel<THREADS_NUM><<<BLOCKS_NUM, THREADS_NUM>>>(edge_queue, edge_queue_offset, node_queue, node_queue_offset, level, results, bitmap);
+        if(DEV == GPU) {
+            gpma_bfs_contract_kernel<THREADS_NUM><<<BLOCKS_NUM, THREADS_NUM>>>(edge_queue, edge_queue_offset, node_queue, node_queue_offset, level, results, bitmap);
+        }
+        else {
+        
+        }
         anyMemcpy<DEV, CPU>(host_num, node_queue_offset, sizeof(SIZE_TYPE));
 
         if (0 == host_num[0])

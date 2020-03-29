@@ -80,10 +80,24 @@ class GPMA {
         init_gpma_members(row_num);
         init_gpma_insertions();
     }
+    GPMA() = default;
 
     void print_status(std::string prefix = "DBG") const {
         DEBUG_PRINTFLN(prefix + ": GPMA_DUMP: keys={}, values={}, row_offset={}, seg_length,tree_height,row_num={},{},{}", keys.size(), values.size(), row_offset.size(), segment_length, tree_height, row_num);
         DEBUG_PRINTFLN(prefix + ": GPMA_DUMP: keys={}, values={}, row_offset={}", rlib::printable_iter(keys), rlib::printable_iter(values_for_print(values)), rlib::printable_iter(row_offset));
+    }
+
+    auto mirror() const {
+        std::conditional_t<DEV == GPU, GPMA<CPU>, GPMA<GPU>> result;
+        result.keys = keys;
+        result.values = values;
+        result.row_offset = row_offset;
+        result.row_num = row_num;
+        result.segment_length = segment_length;
+        result.tree_height = tree_height;
+        result.lower_element = lower_element;
+        result.upper_element = upper_element;
+        return result;
     }
 };
 
