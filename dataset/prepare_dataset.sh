@@ -28,7 +28,7 @@ with open('soc-pokec-relationships.txt', 'r') as f:
         node_size = max(node_size, b)
 edge_size = len(edges)
 random.shuffle(edges)
-with open('pokec.txt', 'w') as f:
+with open('$NODE_MAX.pokec.txt', 'w') as f:
     f.write('{} {}\n'.format(node_size, edge_size))
     for a, b in edges:
         f.write('{} {}\n'.format(a - 1, b - 1))

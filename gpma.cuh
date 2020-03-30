@@ -80,10 +80,24 @@ class GPMA {
         init_gpma_members(row_num);
         init_gpma_insertions();
     }
+    GPMA() = default;
 
     void print_status(std::string prefix = "DBG") const {
         DEBUG_PRINTFLN(prefix + ": GPMA_DUMP: keys={}, values={}, row_offset={}, seg_length,tree_height,row_num={},{},{}", keys.size(), values.size(), row_offset.size(), segment_length, tree_height, row_num);
         DEBUG_PRINTFLN(prefix + ": GPMA_DUMP: keys={}, values={}, row_offset={}", rlib::printable_iter(keys), rlib::printable_iter(values_for_print(values)), rlib::printable_iter(row_offset));
+    }
+
+    auto mirror() const {
+        std::conditional_t<DEV == GPU, GPMA<CPU>, GPMA<GPU>> result;
+        result.keys = keys;
+        result.values = values;
+        result.row_offset = row_offset;
+        result.row_num = row_num;
+        result.segment_length = segment_length;
+        result.tree_height = tree_height;
+        result.lower_element = lower_element;
+        result.upper_element = upper_element;
+        return result;
     }
 };
 
@@ -619,6 +633,7 @@ __forceinline__ __host__ __device__ void redispatch_loop_body(size_t i, KEY_TYPE
     VALUE_TYPE cur_value = tmp_values[i];
     keys[proj_location] = cur_key;
     values[proj_location] = cur_value;
+    //printf("DETAIL DEBUG: i=%lu, KEYS[%d]<=%llu, values[%d]<=%lu\n", i, proj_location, cur_key, proj_location, cur_value);
 
     // addition for csr
     if ((cur_key & COL_IDX_NONE) == COL_IDX_NONE) {
@@ -672,19 +687,24 @@ void rebalancing_impl_cpu(SIZE_TYPE unique_update_size, SIZE_TYPE seg_length, SI
 
             if (lower_bound <= merge_size && merge_size <= upper_bound) {
                 // move
-                memcpy(tmp_keys + (*compacted_size), update_keys + interval_a, interval_size);
-                memcpy(tmp_values + (*compacted_size), update_values + interval_a, interval_size);
+                memcpy(tmp_keys + (*compacted_size), update_keys + interval_a, interval_size * sizeof(*update_keys));
+                memcpy(tmp_values + (*compacted_size), update_values + interval_a, interval_size * sizeof(*update_values));
+                //printf("DETAIL DEBUG 4: values[0:6] = %llu %llu %llu %llu %llu %llu\n", values[0], values[1], values[2], values[3], values[4], values[5]);
+                //printf("DETAIL DEBUG 4: update_values[0:6] = %llu %llu %llu %llu %llu %llu\n", update_values[0], update_values[1], update_values[2], update_values[3], update_values[4], update_values[5]);
 
                 // set SIZE_NONE for executed updates
-                // std::fill(...); mXeXmXsXeXt(update_nodes + interval_a, SIZE_NONE, interval_size);
                 std::fill(update_nodes + interval_a, update_nodes + interval_a + interval_size, SIZE_NONE);
-                thrust::sort_by_key(thrust::host, key, key + merge_size, value);
+                thrust::sort_by_key(thrust::host, tmp_keys, tmp_keys + merge_size, tmp_values);
                 // In original cub_sort_by_key, tmp_key should be equal to key(sorted), tmp_value should equal to value(sorted).
                 // TODO: conflict|| std::copy(key, key + merge_size, tmp_key);
+                std::copy(tmp_keys, tmp_keys + merge_size, key); // TODO: thread conflict!
                 // TODO: conflict|| std::copy(value, value + merge_size, tmp_value);
+                std::copy(tmp_values, tmp_values + merge_size, value);
+
+                //printf("DETAIL DEBUG 3: values[0:6] = %llu %llu %llu %llu %llu %llu\n", values[0], values[1], values[2], values[3], values[4], values[5]);
+                //printf("DETAIL DEBUG 3: tmp_values[0:6] = %llu %llu %llu %llu %llu %llu\n", tmp_values[0], tmp_values[1], tmp_values[2], tmp_values[3], tmp_values[4], tmp_values[5]);
 
                 // re-dispatch
-                // std::fill(); mXeXmXsXeXt(key, KEY_NONE, update_width);
                 std::fill(key, key + update_width, KEY_NONE);
 
                 // redispatch_kernel<<<BLOCKS_NUM, THREADS_NUM>>>(tmp_keys, tmp_values, key, value, update_width, seg_length, merge_size, row_offset, update_node);
@@ -738,17 +758,23 @@ __global__ void rebalancing_kernel(SIZE_TYPE unique_update_size, SIZE_TYPE seg_l
         if (lower_bound <= merge_size && merge_size <= upper_bound) {
             SIZE_TYPE THREADS_NUM = 32;
             SIZE_TYPE BLOCKS_NUM;
-
             // move
             BLOCKS_NUM = CALC_BLOCKS_NUM(THREADS_NUM, interval_size);
             memcpy_kernel<KEY_TYPE><<<BLOCKS_NUM, THREADS_NUM>>>(tmp_keys + (*compacted_size), update_keys + interval_a, interval_size);
             memcpy_kernel<VALUE_TYPE><<<BLOCKS_NUM, THREADS_NUM>>>(tmp_values + (*compacted_size), update_values + interval_a, interval_size);
+                //printf("DETAIL DEBUG 4: values[0:6] = %llu %llu %llu %llu %llu %llu\n", values[0], values[1], values[2], values[3], values[4], values[5]);
+                //printf("DETAIL DEBUG 4: update_values[0:6] = %llu %llu %llu %llu %llu %llu\n", update_values[0], update_values[1], update_values[2], update_values[3], update_values[4], update_values[5]);
+
 
             // set SIZE_NONE for executed updates
             memset_kernel<SIZE_TYPE><<<BLOCKS_NUM, THREADS_NUM>>>(update_nodes + interval_a, SIZE_NONE, interval_size);
             anySync<GPU>(); // Necessary here, since there's multiple CUDA stream.
 
+            // warning: the silly original GPU coder: sub-func::keys is tmp_keys, and sub-func::values is tmp_values. which means, sort tmp_keys+tmp_values and copy to key+value.
             cub_sort_key_value(tmp_keys, tmp_values, merge_size, key, value);
+                //printf("DETAIL DEBUG 3: values[0:6] = %llu %llu %llu %llu %llu %llu\n", values[0], values[1], values[2], values[3], values[4], values[5]);
+                //printf("DETAIL DEBUG 3: tmp_values[0:6] = %llu %llu %llu %llu %llu %llu\n", tmp_values[0], tmp_values[1], tmp_values[2], tmp_values[3], tmp_values[4], tmp_values[5]);
+
 
             // re-dispatch
             BLOCKS_NUM = CALC_BLOCKS_NUM(THREADS_NUM, update_width);
@@ -772,7 +798,7 @@ template <dev_type_t DEV>
 void rebalance_batch(SIZE_TYPE level, SIZE_TYPE seg_length, KEY_TYPE *keys, VALUE_TYPE *values, SIZE_TYPE *update_nodes, KEY_TYPE *update_keys, VALUE_TYPE *update_values, SIZE_TYPE update_size, SIZE_TYPE *unique_update_nodes, SIZE_TYPE *update_offset, SIZE_TYPE unique_update_size, SIZE_TYPE lower_bound, SIZE_TYPE upper_bound, SIZE_TYPE *row_offset) {
     // TryInsert+ is this function.
     SIZE_TYPE update_width = seg_length << level; // real seg_length of this level
-    if (update_width <= 1024) {
+    if (false && update_width <= 1024) {
         assert(IsPowerOfTwo(update_width));
         if (DEV == GPU) {
             // func pointer for each template
@@ -812,6 +838,7 @@ void rebalance_batch(SIZE_TYPE level, SIZE_TYPE seg_length, KEY_TYPE *keys, VALU
             func_arr[fls(update_width) - 2](unique_update_size, seg_length, level, keys, values, update_nodes, update_keys, update_values, unique_update_nodes, update_offset, lower_bound, upper_bound, row_offset);
         }
     } else {
+
         if (DEV == GPU) {
             // operate each tree node by cub-kernel (dynamic parallelsim)
             SIZE_TYPE BLOCKS_NUM = min(2048, unique_update_size);
@@ -1007,7 +1034,7 @@ __host__ void update_gpma(GPMA<DEV> &gpma, NATIVE_VEC_KEY<DEV> &update_keys, NAT
         SIZE_TYPE upper_bound = gpma.upper_element[level];
 
         // re-balance
-        //rlib::println("REBAL ARGS: ", level, gpma.segment_length, rlib::printable_iter(gpma.keys), rlib::printable_iter(gpma.values), rlib::printable_iter(update_nodes), rlib::printable_iter(update_keys), rlib::printable_iter(update_values), update_size, "|||", rlib::printable_iter(unique_update_nodes), "|", rlib::printable_iter(update_offset), "|", unique_node_size, lower_bound, upper_bound, rlib::printable_iter(gpma.row_offset));
+        // rlib::println("REBAL ARGS: ", rlib::printable_iter(gpma.keys), "|",rlib::printable_iter(gpma.values), "|", rlib::printable_iter(update_keys), "|",rlib::printable_iter(update_values), update_size, "|||", rlib::printable_iter(unique_update_nodes), "|", rlib::printable_iter(update_offset), "|", unique_node_size, lower_bound, upper_bound, rlib::printable_iter(gpma.row_offset));
         rebalance_batch<DEV>(level, gpma.segment_length, RAW_PTR(gpma.keys), RAW_PTR(gpma.values), RAW_PTR(update_nodes), RAW_PTR(update_keys), RAW_PTR(update_values), update_size, RAW_PTR(unique_update_nodes), RAW_PTR(update_offset), unique_node_size, lower_bound, upper_bound, RAW_PTR(gpma.row_offset));
         gpma.print_status("IN 5, after REBAL");
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "cub/cub.cuh"
+#include "utils.cuh"
 
 #define FULL_MASK 0xffffffff
 
@@ -247,30 +248,31 @@ __global__ void gpma_bfs_contract_kernel(SIZE_TYPE *edge_queue, SIZE_TYPE *edge_
     }
 }
 
+template <dev_type_t DEV>
 __host__ void gpma_bfs(KEY_TYPE *keys, VALUE_TYPE *values, SIZE_TYPE *row_offsets, SIZE_TYPE node_size, SIZE_TYPE edge_size, SIZE_TYPE start_node, SIZE_TYPE *results) {
 
-    cudaMemset(results, 0, sizeof(SIZE_TYPE) * node_size);
+    anyMemset<DEV>(results, 0, sizeof(SIZE_TYPE) * node_size);
     SIZE_TYPE *bitmap;
-    cudaMalloc(&bitmap, sizeof(SIZE_TYPE) * ((node_size - 1) / 32 + 1));
-    cudaMemset(bitmap, 0, sizeof(SIZE_TYPE) * ((node_size - 1) / 32 + 1));
+    anyMalloc<DEV>((void**)&bitmap, sizeof(SIZE_TYPE) * ((node_size - 1) / 32 + 1));
+    anyMemset<DEV>(bitmap, 0, sizeof(SIZE_TYPE) * ((node_size - 1) / 32 + 1));
     SIZE_TYPE *node_queue;
-    cudaMalloc(&node_queue, sizeof(SIZE_TYPE) * node_size);
+    anyMalloc<DEV>((void**)&node_queue, sizeof(SIZE_TYPE) * node_size);
     SIZE_TYPE *node_queue_offset;
-    cudaMalloc(&node_queue_offset, sizeof(SIZE_TYPE));
+    anyMalloc<DEV>((void**)&node_queue_offset, sizeof(SIZE_TYPE));
     SIZE_TYPE *edge_queue;
-    cudaMalloc(&edge_queue, sizeof(SIZE_TYPE) * edge_size);
+    anyMalloc<DEV>((void**)&edge_queue, sizeof(SIZE_TYPE) * edge_size);
     SIZE_TYPE *edge_queue_offset;
-    cudaMalloc(&edge_queue_offset, sizeof(SIZE_TYPE));
+    anyMalloc<DEV>((void**)&edge_queue_offset, sizeof(SIZE_TYPE));
 
     // init
     SIZE_TYPE host_num[1];
     host_num[0] = start_node;
-    cudaMemcpy(node_queue, host_num, sizeof(SIZE_TYPE), cudaMemcpyHostToDevice);
+    anyMemcpy<CPU, DEV>(node_queue, host_num, sizeof(SIZE_TYPE));
     host_num[0] = 1 << (start_node % 32);
-    cudaMemcpy(&bitmap[start_node / 32], host_num, sizeof(SIZE_TYPE), cudaMemcpyHostToDevice);
+    anyMemcpy<CPU, DEV>(&bitmap[start_node / 32], host_num, sizeof(SIZE_TYPE));
     host_num[0] = 1;
-    cudaMemcpy(node_queue_offset, host_num, sizeof(SIZE_TYPE), cudaMemcpyHostToDevice);
-    cudaMemcpy(&results[start_node], host_num, sizeof(SIZE_TYPE), cudaMemcpyHostToDevice);
+    anyMemcpy<CPU, DEV>(node_queue_offset, host_num, sizeof(SIZE_TYPE));
+    anyMemcpy<CPU, DEV>(&results[start_node], host_num, sizeof(SIZE_TYPE));
 
     SIZE_TYPE level = 1;
     const SIZE_TYPE THREADS_NUM = 256;
@@ -278,25 +280,35 @@ __host__ void gpma_bfs(KEY_TYPE *keys, VALUE_TYPE *values, SIZE_TYPE *row_offset
         // gather
         SIZE_TYPE BLOCKS_NUM = CALC_BLOCKS_NUM(THREADS_NUM, host_num[0]);
         host_num[0] = 0;
-        cudaMemcpy(edge_queue_offset, host_num, sizeof(SIZE_TYPE), cudaMemcpyHostToDevice);
-        gpma_bfs_gather_kernel<THREADS_NUM><<<BLOCKS_NUM, THREADS_NUM>>>(node_queue, node_queue_offset, edge_queue, edge_queue_offset, keys, values, row_offsets);
+        anyMemcpy<CPU, DEV>(edge_queue_offset, host_num, sizeof(SIZE_TYPE));
+        if(DEV == GPU) {
+            gpma_bfs_gather_kernel<THREADS_NUM><<<BLOCKS_NUM, THREADS_NUM>>>(node_queue, node_queue_offset, edge_queue, edge_queue_offset, keys, values, row_offsets);
+        }
+        else {
+            
+        }
 
         // contract
         level++;
-        cudaMemcpy(node_queue_offset, host_num, sizeof(SIZE_TYPE), cudaMemcpyHostToDevice);
-        cudaMemcpy(host_num, edge_queue_offset, sizeof(SIZE_TYPE), cudaMemcpyDeviceToHost);
+        anyMemcpy<CPU, DEV>(node_queue_offset, host_num, sizeof(SIZE_TYPE));
+        anyMemcpy<DEV, CPU>(host_num, edge_queue_offset, sizeof(SIZE_TYPE));
         BLOCKS_NUM = CALC_BLOCKS_NUM(THREADS_NUM, host_num[0]);
 
-        gpma_bfs_contract_kernel<THREADS_NUM><<<BLOCKS_NUM, THREADS_NUM>>>(edge_queue, edge_queue_offset, node_queue, node_queue_offset, level, results, bitmap);
-        cudaMemcpy(host_num, node_queue_offset, sizeof(SIZE_TYPE), cudaMemcpyDeviceToHost);
+        if(DEV == GPU) {
+            gpma_bfs_contract_kernel<THREADS_NUM><<<BLOCKS_NUM, THREADS_NUM>>>(edge_queue, edge_queue_offset, node_queue, node_queue_offset, level, results, bitmap);
+        }
+        else {
+        
+        }
+        anyMemcpy<DEV, CPU>(host_num, node_queue_offset, sizeof(SIZE_TYPE));
 
         if (0 == host_num[0])
             break;
     }
 
-    cudaFree(bitmap);
-    cudaFree(node_queue);
-    cudaFree(node_queue_offset);
-    cudaFree(edge_queue);
-    cudaFree(edge_queue_offset);
+    anyFree<DEV>(bitmap);
+    anyFree<DEV>(node_queue);
+    anyFree<DEV>(node_queue_offset);
+    anyFree<DEV>(edge_queue);
+    anyFree<DEV>(edge_queue_offset);
 }

@@ -85,6 +85,14 @@ __host__ __device__ void anyFree<GPU>(void *ptr) {
     cErr(cudaFree(ptr));
 }
 
+template <dev_type_t DEV>
+void anyMemset(void *dst, int value, size_t count) {
+    if(DEV == GPU)
+        cErr(cudaMemset(dst, value, count));
+    else
+        memset(dst, value, count);
+}
+
 template <dev_type_t DEV_SRC, dev_type_t DEV_DST>
 void anyMemcpy(void *dst, const void *src, size_t count) {
     cudaMemcpyKind kind = DEV_SRC == GPU ? (DEV_DST == GPU ? cudaMemcpyDeviceToDevice : cudaMemcpyDeviceToHost) : (DEV_DST == GPU ? cudaMemcpyHostToDevice : cudaMemcpyHostToHost);
@@ -106,14 +114,8 @@ void anyRunLengthEncoding(const SIZE_TYPE *inputVec, SIZE_TYPE inputLen, SIZE_TY
 
         SIZE_TYPE tmp;
         anyMemcpy<GPU, CPU>(&tmp, outputLen, sizeof(SIZE_TYPE));
-    printf("RLE result: outputSize=%d, inputSize=%d\n", tmp, inputLen);
     } else {
         *outputLen = rlib::cpu_rle_simple(inputVec, inputLen, outputVec, outputLenVec);
-    printf("RLE result: outputSize=%d, inputSize=%d\n", *outputLen, inputLen);
-//    for(auto cter = 0; cter < inputLen; ++cter)
-//        printf("IN %d\n", inputVec[cter]);
-//    for(auto cter = 0; cter < *outputLen; ++cter)
-//        printf("OUT %d*%d\n", outputLenVec[cter], outputVec[cter]);
     }
 
 
