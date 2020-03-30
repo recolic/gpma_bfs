@@ -655,7 +655,7 @@ void rebalancing_impl_cpu(SIZE_TYPE unique_update_size, SIZE_TYPE seg_length, SI
     // COPY_PASTED from rebalancing_kernel BEGIN
     SIZE_TYPE update_width = seg_length << level;
 
-//#pragma omp parallel
+#pragma omp parallel
     {
         // private variables.
         SIZE_TYPE *compacted_size;
@@ -670,7 +670,7 @@ void rebalancing_impl_cpu(SIZE_TYPE unique_update_size, SIZE_TYPE seg_length, SI
         anyMalloc<CPU>((void **)&tmp_exscan, update_width * sizeof(SIZE_TYPE));
         anyMalloc<CPU>((void **)&tmp_label, update_width * sizeof(SIZE_TYPE));
 
-//#pragma omp for schedule(dynamic, 8) // this loop is heavy...
+#pragma omp for schedule(dynamic, 8) // this loop is heavy...
         for (SIZE_TYPE i = 0; i < unique_update_size; ++i) {
             SIZE_TYPE update_node = unique_update_nodes[i];
             KEY_TYPE *key = keys + update_node;
