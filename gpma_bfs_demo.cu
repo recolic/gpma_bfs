@@ -38,8 +38,11 @@ int main(int argc, char **argv) {
     char *data_path = argv[1];
     int bfs_start_node = std::atoi(argv[2]);
 
-    // cudaDeviceSetLimit(cudaLimitMallocHeapSize, 1024ll * 1024 * 1024);
-    // cudaDeviceSetLimit(cudaLimitDevRuntimeSyncDepth, 5);
+#if CUDA_SM >= 60
+    // heap size limit is KNOWN to be required at SM_75(Tesla T4),SM_61(Tesla P4), and KNOWN to be forbidden at SM_50(GEForce 750).
+    cudaDeviceSetLimit(cudaLimitMallocHeapSize, 1024ll * 1024 * 1024);
+    cudaDeviceSetLimit(cudaLimitDevRuntimeSyncDepth, 5);
+#endif
 
     thrust::host_vector<int> host_x;
     thrust::host_vector<int> host_y;
@@ -53,15 +56,15 @@ int main(int argc, char **argv) {
         h_base_keys[i] = ((KEY_TYPE)host_x[i] << 32) + host_y[i];
     }
 
-    NATIVE_VEC_KEY<CPU> base_keys = h_base_keys;
-    NATIVE_VEC_VALUE<CPU> base_values(half, 1);
+    NATIVE_VEC_KEY<TEST_DEV> base_keys = h_base_keys;
+    NATIVE_VEC_VALUE<TEST_DEV> base_values(half, 1);
     cudaDeviceSynchronize();
 
     int num_slide = 100;
     int step = half / num_slide;
 
     LOG_TIME("before init_csr_gpma")
-    GPMA<CPU> gpma(node_size);
+    GPMA<TEST_DEV> gpma(node_size);
     cudaDeviceSynchronize();
 
     LOG_TIME("before update_gpma 1")
@@ -69,9 +72,12 @@ int main(int argc, char **argv) {
     thrust::device_vector<SIZE_TYPE> bfs_result(node_size);
     cudaDeviceSynchronize();
 
-    LOG_TIME("before first bfs")
-    {
-        auto gpma_mirror = gpma.mirror();
+    LOG_TIME("before first bfs") {
+        auto gpma_mirror = gpma
+#if TEST_DEV == CPU
+            .mirror()
+#endif
+        ;
         gpma_bfs<GPU>(RAW_PTR(gpma_mirror.keys), RAW_PTR(gpma_mirror.values), RAW_PTR(gpma_mirror.row_offset), node_size, edge_size, bfs_start_node, RAW_PTR(bfs_result));
     }
     int reach_nodes = node_size - thrust::count(bfs_result.begin(), bfs_result.end(), 0);
@@ -89,10 +95,10 @@ int main(int argc, char **argv) {
             hk[j + step] = ((KEY_TYPE)host_x[idx] << 32) + host_y[idx];
         }
 
-        NATIVE_VEC_VALUE<CPU> update_values(step * 2);
+        NATIVE_VEC_VALUE<TEST_DEV> update_values(step * 2);
         thrust::fill(update_values.begin(), update_values.begin() + step, 1);
         thrust::fill(update_values.begin() + step, update_values.end(), VALUE_NONE);
-        NATIVE_VEC_KEY<CPU> update_keys = hk;
+        NATIVE_VEC_KEY<TEST_DEV> update_keys = hk;
         cudaDeviceSynchronize();
 
         update_gpma(gpma, update_keys, update_values);
@@ -102,7 +108,11 @@ int main(int argc, char **argv) {
     LOG_TIME("before second bfs")
 
     {
-        auto gpma_mirror = gpma.mirror();
+        auto gpma_mirror = gpma
+#if TEST_DEV == CPU
+            .mirror()
+#endif
+        ;
         gpma_bfs<GPU>(RAW_PTR(gpma_mirror.keys), RAW_PTR(gpma_mirror.values), RAW_PTR(gpma_mirror.row_offset), node_size, edge_size, bfs_start_node, RAW_PTR(bfs_result));
     }
     reach_nodes = node_size - thrust::count(bfs_result.begin(), bfs_result.end(), 0);

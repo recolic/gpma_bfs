@@ -253,16 +253,16 @@ __host__ void gpma_bfs(KEY_TYPE *keys, VALUE_TYPE *values, SIZE_TYPE *row_offset
 
     anyMemset<DEV>(results, 0, sizeof(SIZE_TYPE) * node_size);
     SIZE_TYPE *bitmap;
-    anyMalloc<DEV>((void**)&bitmap, sizeof(SIZE_TYPE) * ((node_size - 1) / 32 + 1));
+    anyMalloc<DEV>((void **)&bitmap, sizeof(SIZE_TYPE) * ((node_size - 1) / 32 + 1));
     anyMemset<DEV>(bitmap, 0, sizeof(SIZE_TYPE) * ((node_size - 1) / 32 + 1));
     SIZE_TYPE *node_queue;
-    anyMalloc<DEV>((void**)&node_queue, sizeof(SIZE_TYPE) * node_size);
+    anyMalloc<DEV>((void **)&node_queue, sizeof(SIZE_TYPE) * node_size);
     SIZE_TYPE *node_queue_offset;
-    anyMalloc<DEV>((void**)&node_queue_offset, sizeof(SIZE_TYPE));
+    anyMalloc<DEV>((void **)&node_queue_offset, sizeof(SIZE_TYPE));
     SIZE_TYPE *edge_queue;
-    anyMalloc<DEV>((void**)&edge_queue, sizeof(SIZE_TYPE) * edge_size);
+    anyMalloc<DEV>((void **)&edge_queue, sizeof(SIZE_TYPE) * edge_size);
     SIZE_TYPE *edge_queue_offset;
-    anyMalloc<DEV>((void**)&edge_queue_offset, sizeof(SIZE_TYPE));
+    anyMalloc<DEV>((void **)&edge_queue_offset, sizeof(SIZE_TYPE));
 
     // init
     SIZE_TYPE host_num[1];
@@ -281,11 +281,9 @@ __host__ void gpma_bfs(KEY_TYPE *keys, VALUE_TYPE *values, SIZE_TYPE *row_offset
         SIZE_TYPE BLOCKS_NUM = CALC_BLOCKS_NUM(THREADS_NUM, host_num[0]);
         host_num[0] = 0;
         anyMemcpy<CPU, DEV>(edge_queue_offset, host_num, sizeof(SIZE_TYPE));
-        if(DEV == GPU) {
+        if (DEV == GPU) {
             gpma_bfs_gather_kernel<THREADS_NUM><<<BLOCKS_NUM, THREADS_NUM>>>(node_queue, node_queue_offset, edge_queue, edge_queue_offset, keys, values, row_offsets);
-        }
-        else {
-            
+        } else {
         }
 
         // contract
@@ -294,11 +292,9 @@ __host__ void gpma_bfs(KEY_TYPE *keys, VALUE_TYPE *values, SIZE_TYPE *row_offset
         anyMemcpy<DEV, CPU>(host_num, edge_queue_offset, sizeof(SIZE_TYPE));
         BLOCKS_NUM = CALC_BLOCKS_NUM(THREADS_NUM, host_num[0]);
 
-        if(DEV == GPU) {
+        if (DEV == GPU) {
             gpma_bfs_contract_kernel<THREADS_NUM><<<BLOCKS_NUM, THREADS_NUM>>>(edge_queue, edge_queue_offset, node_queue, node_queue_offset, level, results, bitmap);
-        }
-        else {
-        
+        } else {
         }
         anyMemcpy<DEV, CPU>(host_num, node_queue_offset, sizeof(SIZE_TYPE));
 

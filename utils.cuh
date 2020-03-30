@@ -87,7 +87,7 @@ __host__ __device__ void anyFree<GPU>(void *ptr) {
 
 template <dev_type_t DEV>
 void anyMemset(void *dst, int value, size_t count) {
-    if(DEV == GPU)
+    if (DEV == GPU)
         cErr(cudaMemset(dst, value, count));
     else
         memset(dst, value, count);
@@ -117,8 +117,6 @@ void anyRunLengthEncoding(const SIZE_TYPE *inputVec, SIZE_TYPE inputLen, SIZE_TY
     } else {
         *outputLen = rlib::cpu_rle_simple(inputVec, inputLen, outputVec, outputLenVec);
     }
-
-
 }
 
 // Sometimes we need to call exsum from gpu code...

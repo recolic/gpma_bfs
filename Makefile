@@ -5,20 +5,18 @@ NVCC ?= /usr/local/cuda-10.2/bin/nvcc
 # requires: cuda 10.2
 SM ?= 50
 
+TEST_DEV ?= GPU
+
 OMP_FLAGS = -Xcompiler -fopenmp
 
-NVFLAGS = -I. -O3 -std=c++14 -arch sm_$(SM) --relocatable-device-code=true --extended-lambda $(OMP_FLAGS) -g
-#  --cudart static
-#         --gpu-architecture=sm_50' is equivalent to 'nvcc --gpu-architecture=compute_50
-#         --gpu-code=sm_50,compute_50'.
+NVFLAGS = -I. -O3 -std=c++14 -DCUDA_SM=$(SM) -arch sm_$(SM) --relocatable-device-code=true --extended-lambda $(OMP_FLAGS) -g -DTEST_DEV=$(TEST_DEV)
 
 default:
 	$(NVCC) $(NVFLAGS) gpma_bfs_demo.cu -o gpma_bfs_demo -lgomp
 
-MINI_TEST_DEV ?= GPU
 
 mini:
-	$(NVCC) $(NVFLAGS) mini.cu -o mini -lgomp -DDEBUG -DTEST_DEV=$(MINI_TEST_DEV)
+	$(NVCC) $(NVFLAGS) mini.cu -o mini -lgomp -DDEBUG
 
 format:
 	clang-format --style=file -i *.cuh *.cu *.hpp

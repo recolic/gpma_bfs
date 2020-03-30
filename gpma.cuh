@@ -762,9 +762,8 @@ __global__ void rebalancing_kernel(SIZE_TYPE unique_update_size, SIZE_TYPE seg_l
             BLOCKS_NUM = CALC_BLOCKS_NUM(THREADS_NUM, interval_size);
             memcpy_kernel<KEY_TYPE><<<BLOCKS_NUM, THREADS_NUM>>>(tmp_keys + (*compacted_size), update_keys + interval_a, interval_size);
             memcpy_kernel<VALUE_TYPE><<<BLOCKS_NUM, THREADS_NUM>>>(tmp_values + (*compacted_size), update_values + interval_a, interval_size);
-                //printf("DETAIL DEBUG 4: values[0:6] = %llu %llu %llu %llu %llu %llu\n", values[0], values[1], values[2], values[3], values[4], values[5]);
-                //printf("DETAIL DEBUG 4: update_values[0:6] = %llu %llu %llu %llu %llu %llu\n", update_values[0], update_values[1], update_values[2], update_values[3], update_values[4], update_values[5]);
-
+            //printf("DETAIL DEBUG 4: values[0:6] = %llu %llu %llu %llu %llu %llu\n", values[0], values[1], values[2], values[3], values[4], values[5]);
+            //printf("DETAIL DEBUG 4: update_values[0:6] = %llu %llu %llu %llu %llu %llu\n", update_values[0], update_values[1], update_values[2], update_values[3], update_values[4], update_values[5]);
 
             // set SIZE_NONE for executed updates
             memset_kernel<SIZE_TYPE><<<BLOCKS_NUM, THREADS_NUM>>>(update_nodes + interval_a, SIZE_NONE, interval_size);
@@ -772,9 +771,8 @@ __global__ void rebalancing_kernel(SIZE_TYPE unique_update_size, SIZE_TYPE seg_l
 
             // warning: the silly original GPU coder: sub-func::keys is tmp_keys, and sub-func::values is tmp_values. which means, sort tmp_keys+tmp_values and copy to key+value.
             cub_sort_key_value(tmp_keys, tmp_values, merge_size, key, value);
-                //printf("DETAIL DEBUG 3: values[0:6] = %llu %llu %llu %llu %llu %llu\n", values[0], values[1], values[2], values[3], values[4], values[5]);
-                //printf("DETAIL DEBUG 3: tmp_values[0:6] = %llu %llu %llu %llu %llu %llu\n", tmp_values[0], tmp_values[1], tmp_values[2], tmp_values[3], tmp_values[4], tmp_values[5]);
-
+            //printf("DETAIL DEBUG 3: values[0:6] = %llu %llu %llu %llu %llu %llu\n", values[0], values[1], values[2], values[3], values[4], values[5]);
+            //printf("DETAIL DEBUG 3: tmp_values[0:6] = %llu %llu %llu %llu %llu %llu\n", tmp_values[0], tmp_values[1], tmp_values[2], tmp_values[3], tmp_values[4], tmp_values[5]);
 
             // re-dispatch
             BLOCKS_NUM = CALC_BLOCKS_NUM(THREADS_NUM, update_width);
@@ -798,9 +796,9 @@ template <dev_type_t DEV>
 void rebalance_batch(SIZE_TYPE level, SIZE_TYPE seg_length, KEY_TYPE *keys, VALUE_TYPE *values, SIZE_TYPE *update_nodes, KEY_TYPE *update_keys, VALUE_TYPE *update_values, SIZE_TYPE update_size, SIZE_TYPE *unique_update_nodes, SIZE_TYPE *update_offset, SIZE_TYPE unique_update_size, SIZE_TYPE lower_bound, SIZE_TYPE upper_bound, SIZE_TYPE *row_offset) {
     // TryInsert+ is this function.
     SIZE_TYPE update_width = seg_length << level; // real seg_length of this level
-    if (false && update_width <= 1024) {
-        assert(IsPowerOfTwo(update_width));
-        if (DEV == GPU) {
+    if (DEV == GPU) {
+        if (update_width <= 1024) {
+            assert(IsPowerOfTwo(update_width));
             // func pointer for each template
             decltype(&block_rebalancing_kernel<1, 1>) func_arr[10];
             func_arr[0] = block_rebalancing_kernel<2, 1>;
@@ -821,33 +819,14 @@ void rebalance_batch(SIZE_TYPE level, SIZE_TYPE seg_length, KEY_TYPE *keys, VALU
             DEBUG_PRINTFLN("ARG-=DEBUG: block_rebalancing_kernel calling func_arr[{}]<<<{}, {}>>>, update_width={}", fls(update_width) - 2, BLOCKS_NUM, THREADS_NUM, update_width);
             func_arr[fls(update_width) - 2]<<<BLOCKS_NUM, THREADS_NUM>>>(seg_length, level, keys, values, update_nodes, update_keys, update_values, unique_update_nodes, update_offset, lower_bound, upper_bound, row_offset);
         } else {
-            // func pointer for each template
-            decltype(&block_rebalancing_cpu<1>) func_arr[10];
-            func_arr[0] = block_rebalancing_cpu<2>;
-            func_arr[1] = block_rebalancing_cpu<4>;
-            func_arr[2] = block_rebalancing_cpu<8>;
-            func_arr[3] = block_rebalancing_cpu<16>;
-            func_arr[4] = block_rebalancing_cpu<32>;
-            func_arr[5] = block_rebalancing_cpu<64>;
-            func_arr[6] = block_rebalancing_cpu<128>;
-            func_arr[7] = block_rebalancing_cpu<256>;
-            func_arr[8] = block_rebalancing_cpu<512>;
-            func_arr[9] = block_rebalancing_cpu<1024>;
-
-            DEBUG_PRINTFLN("ARG-=DEBUG: CPU block_rebalancing_cpu calling func_arr[{}], update_width={}", fls(update_width) - 2, update_width);
-            func_arr[fls(update_width) - 2](unique_update_size, seg_length, level, keys, values, update_nodes, update_keys, update_values, unique_update_nodes, update_offset, lower_bound, upper_bound, row_offset);
-        }
-    } else {
-
-        if (DEV == GPU) {
             // operate each tree node by cub-kernel (dynamic parallelsim)
             SIZE_TYPE BLOCKS_NUM = min(2048, unique_update_size);
             DEBUG_PRINTFLN("ARG-=DEBUG: rebalance_batch calling rebalancing_kernel<<<{}, {}>>>, update_width={}", BLOCKS_NUM, 1, update_width);
             rebalancing_kernel<<<BLOCKS_NUM, 1>>>(unique_update_size, seg_length, level, keys, values, update_nodes, update_keys, update_values, unique_update_nodes, update_offset, lower_bound, upper_bound, row_offset);
-        } else {
-            DEBUG_PRINTFLN("ARG-=DEBUG: CPU rebalance_batch calling rebalancing_impl_cpu, blocks={}, update_width={}", unique_update_size, update_width);
-            rebalancing_impl_cpu(unique_update_size, seg_length, level, keys, values, update_nodes, update_keys, update_values, unique_update_nodes, update_offset, lower_bound, upper_bound, row_offset);
         }
+    } else { // DEV == CPU
+        DEBUG_PRINTFLN("ARG-=DEBUG: CPU rebalance_batch calling rebalancing_impl_cpu, blocks={}, update_width={}", unique_update_size, update_width);
+        rebalancing_impl_cpu(unique_update_size, seg_length, level, keys, values, update_nodes, update_keys, update_values, unique_update_nodes, update_offset, lower_bound, upper_bound, row_offset);
     }
 
     anySync<DEV>(); // after previous kernel launch
