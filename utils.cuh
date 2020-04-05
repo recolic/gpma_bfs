@@ -22,8 +22,9 @@ using SIZE_TYPE = uint32_t;
 namespace runtime_info {
 // some magic for template argument.
 using dev_type_t = size_t;
-constexpr dev_type_t GPU = 19990823;
-constexpr dev_type_t CPU = 19981223;
+// `#if DEV == CPU` won't work with constexpr. So I have to use macro.
+#define GPU 19990823ul
+#define CPU 19981223ul
 
 template <dev_type_t dev_type, typename value_type>
 struct native_vector;
