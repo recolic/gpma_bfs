@@ -5,6 +5,7 @@
 
 #define FULL_MASK 0xffffffff
 
+// For every node in NodeQ, push its neighbor node to EdgeQ.
 template <SIZE_TYPE THREADS_NUM>
 __global__ void gpma_bfs_gather_kernel(SIZE_TYPE *node_queue, SIZE_TYPE *node_queue_offset, SIZE_TYPE *edge_queue, SIZE_TYPE *edge_queue_offset, KEY_TYPE *keys, VALUE_TYPE *values, SIZE_TYPE *row_offsets) {
 
@@ -56,22 +57,25 @@ __global__ void gpma_bfs_gather_kernel(SIZE_TYPE *node_queue, SIZE_TYPE *node_qu
             SIZE_TYPE block_aggregate;
             while (__syncthreads_or(gather < gather_end)) {
                 if (gather < gather_end) {
+                    // RDEBUG: ACTUAL LOGIC BEGIN
                     KEY_TYPE cur_key = keys[gather];
                     VALUE_TYPE cur_value = values[gather];
-                    neighbour = (SIZE_TYPE)(cur_key & COL_IDX_NONE);
-                    thread_data_in = (neighbour == COL_IDX_NONE || cur_value == VALUE_NONE) ? 0 : 1;
+                    neighbour = (SIZE_TYPE)(cur_key & COL_IDX_NONE); // get low 32b, which is Edge.TO.
+                    thread_data_in = (neighbour == COL_IDX_NONE || cur_value == VALUE_NONE) ? 0 : 1; // DO NOTHING if NULL.
                 } else
-                    thread_data_in = 0;
+                    thread_data_in = 0; // NOTHING TO DO.
 
                 __syncthreads();
                 BlockScan(block_temp_storage).ExclusiveSum(thread_data_in, thread_data_out, block_aggregate);
+                // block_aggregate stores the final sum of all threads: how many valid task in this turn?
                 __syncthreads();
                 if (0 == thread_id) {
                     output_cta_offset = atomicAdd(edge_queue_offset, block_aggregate);
                 }
                 __syncthreads();
                 if (thread_data_in)
-                    edge_queue[output_cta_offset + thread_data_out] = neighbour;
+                    edge_queue[output_cta_offset + thread_data_out] = neighbour; // THE ONLY USEFUL STATEMENT!
+                // RDEBUG: ACTUAL LOGIC END
                 gather += THREADS_NUM;
             }
         }
@@ -122,7 +126,7 @@ __global__ void gpma_bfs_gather_kernel(SIZE_TYPE *node_queue, SIZE_TYPE *node_qu
         SIZE_TYPE total;
         SIZE_TYPE remain;
         __syncthreads();
-        BlockScan(block_temp_storage).ExclusiveSum(thread_data, rsv_rank, total);
+        BlockScan(block_temp_storage).ExclusiveSum(thread_data, rsv_rank, total); // total = how many tasks left in this block?
         __syncthreads();
 
         SIZE_TYPE cta_progress = 0;
@@ -202,7 +206,7 @@ __global__ void gpma_bfs_contract_kernel(SIZE_TYPE *edge_queue, SIZE_TYPE *edge_
             neighbour = edge_queue[cta_offset + thread_id];
 
             // warp cull
-            SIZE_TYPE hash = neighbour & 127;
+            SIZE_TYPE hash = neighbour & 127; // 0x7f
             warp_cache[warp_id][hash] = neighbour;
             SIZE_TYPE retrieved = warp_cache[warp_id][hash];
             if (retrieved == neighbour) {
