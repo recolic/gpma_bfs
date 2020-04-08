@@ -65,6 +65,7 @@ int main(int argc, char **argv) {
 
     LOG_TIME("before init_csr_gpma")
     GPMA<TEST_DEV> gpma(node_size);
+    // init GPMA_multidev
     cudaDeviceSynchronize();
 
     LOG_TIME("before update_gpma 1")
