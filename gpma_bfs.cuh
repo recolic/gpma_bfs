@@ -57,7 +57,7 @@ __global__ void gpma_bfs_gather_kernel(SIZE_TYPE *node_queue, SIZE_TYPE *node_qu
             SIZE_TYPE block_aggregate;
             while (__syncthreads_or(gather < gather_end)) {
                 if (gather < gather_end) {
-                    // RDEBUG: ACTUAL LOGIC BEGIN
+                    // RDEBUG: ACTUAL LOGIC BEGIN: PUSH the destination node (neighbor) INTO edgeQ.
                     KEY_TYPE cur_key = keys[gather];
                     VALUE_TYPE cur_value = values[gather];
                     neighbour = (SIZE_TYPE)(cur_key & COL_IDX_NONE); // get low 32b, which is Edge.TO.
@@ -75,7 +75,7 @@ __global__ void gpma_bfs_gather_kernel(SIZE_TYPE *node_queue, SIZE_TYPE *node_qu
                 __syncthreads();
                 if (thread_data_in)
                     edge_queue[output_cta_offset + thread_data_out] = neighbour; // THE ONLY USEFUL STATEMENT!
-                // RDEBUG: ACTUAL LOGIC END
+                // RDEBUG: ACTUAL LOGIC END: PUSH the destination node (neighbor) INTO edgeQ.
                 gather += THREADS_NUM;
             }
         }
@@ -172,6 +172,7 @@ __global__ void gpma_bfs_gather_kernel(SIZE_TYPE *node_queue, SIZE_TYPE *node_qu
     }
 }
 
+// For every node in edgeQ, set results[node]=level for ONLY NEW nodes. Then put these NEW nodes in nodeQ.
 template <SIZE_TYPE THREADS_NUM>
 __global__ void gpma_bfs_contract_kernel(SIZE_TYPE *edge_queue, SIZE_TYPE *edge_queue_offset, SIZE_TYPE *node_queue, SIZE_TYPE *node_queue_offset, SIZE_TYPE level, SIZE_TYPE *label, SIZE_TYPE *bitmap) {
 
@@ -223,20 +224,22 @@ __global__ void gpma_bfs_contract_kernel(SIZE_TYPE *edge_queue, SIZE_TYPE *edge_
             cta1_cache[neighbour % HASH_KEY1] = neighbour;
             cta2_cache[neighbour % HASH_KEY2] = neighbour;
 
-            // bitmap check
+            // bitmap check: if bitmap[neighbour].isSet(): break
+            //               else bitmap[neighbour].set()
             SIZE_TYPE bit_loc = 1 << (neighbour % 32);
             SIZE_TYPE bit_chunk = bitmap[neighbour / 32];
             if (bit_chunk & bit_loc)
                 break;
             bitmap[neighbour / 32] = bit_chunk + bit_loc;
 
-            SIZE_TYPE ret = atomicCAS(label + neighbour, 0, level);
-            valid = ret ? 0 : 1;
+            // note: `label` is `results`
+            SIZE_TYPE ret = atomicCAS(label + neighbour, 0, level); // if label[neighbour] == 0: label[neighbour] = level
+            valid = ret ? 0 : 1; // valid = isSwapHappened?
         } while (false);
         __syncthreads();
 
         SIZE_TYPE scatter;
-        SIZE_TYPE total;
+        SIZE_TYPE total; // how many new nodes reached in this turn?
         BlockScan(temp_storage).ExclusiveSum(valid, scatter, total);
         __syncthreads();
 
@@ -256,14 +259,14 @@ template <dev_type_t DEV>
 __host__ void gpma_bfs(KEY_TYPE *keys, VALUE_TYPE *values, SIZE_TYPE *row_offsets, SIZE_TYPE node_size, SIZE_TYPE edge_size, SIZE_TYPE start_node, SIZE_TYPE *results) {
 
     anyMemset<DEV>(results, 0, sizeof(SIZE_TYPE) * node_size);
-    SIZE_TYPE *bitmap;
+    SIZE_TYPE *bitmap; // share a global bitmap, since all parts are the same graph.
     anyMalloc<DEV>((void **)&bitmap, sizeof(SIZE_TYPE) * ((node_size - 1) / 32 + 1));
     anyMemset<DEV>(bitmap, 0, sizeof(SIZE_TYPE) * ((node_size - 1) / 32 + 1));
-    SIZE_TYPE *node_queue;
+    SIZE_TYPE *node_queue; // simple join
     anyMalloc<DEV>((void **)&node_queue, sizeof(SIZE_TYPE) * node_size);
     SIZE_TYPE *node_queue_offset;
     anyMalloc<DEV>((void **)&node_queue_offset, sizeof(SIZE_TYPE));
-    SIZE_TYPE *edge_queue;
+    SIZE_TYPE *edge_queue; // simple join
     anyMalloc<DEV>((void **)&edge_queue, sizeof(SIZE_TYPE) * edge_size);
     SIZE_TYPE *edge_queue_offset;
     anyMalloc<DEV>((void **)&edge_queue_offset, sizeof(SIZE_TYPE));
