@@ -5,6 +5,25 @@
 
 #define FULL_MASK 0xffffffff
 
+namespace impl {
+__host__ __device__ inline bool gpma_bitmap_get(SIZE_TYPE *bitmap, size_t bit_offset) {
+    // Host should call this function with bitmap in CPU.
+    // Device should call this function with bitmap in GPU.
+    SIZE_TYPE bit_loc = 1 << (bit_offset % 32);
+    SIZE_TYPE bit_chunk = bitmap[bit_offset / 32];
+    return (bit_chunk & bit_loc);
+}
+__host__ __device__ inline bool gpma_bitmap_set_return_old(SIZE_TYPE *bitmap, size_t bit_offset) {
+    // Host should call this function with bitmap in CPU.
+    // Device should call this function with bitmap in GPU.
+    SIZE_TYPE bit_loc = 1 << (bit_offset % 32);
+    SIZE_TYPE bit_chunk = bitmap[bit_offset / 32];
+    bool old = (bit_chunk & bit_loc);
+    bitmap[bit_offset / 32] = bit_chunk + bit_loc;
+    return old;
+}
+}
+
 // For every node in NodeQ, push its neighbor node to EdgeQ.
 template <SIZE_TYPE THREADS_NUM>
 __global__ void gpma_bfs_gather_kernel(SIZE_TYPE *node_queue, SIZE_TYPE *node_queue_offset, SIZE_TYPE *edge_queue, SIZE_TYPE *edge_queue_offset, KEY_TYPE *keys, VALUE_TYPE *values, SIZE_TYPE *row_offsets) {
@@ -226,11 +245,9 @@ __global__ void gpma_bfs_contract_kernel(SIZE_TYPE *edge_queue, SIZE_TYPE *edge_
 
             // bitmap check: if bitmap[neighbour].isSet(): break
             //               else bitmap[neighbour].set()
-            SIZE_TYPE bit_loc = 1 << (neighbour % 32);
-            SIZE_TYPE bit_chunk = bitmap[neighbour / 32];
-            if (bit_chunk & bit_loc)
+            bool oldbit = impl::gpma_bitmap_set_return_old(bitmap, neighbour);
+            if(oldbit)
                 break;
-            bitmap[neighbour / 32] = bit_chunk + bit_loc;
 
             // note: `label` is `results`
             SIZE_TYPE ret = atomicCAS(label + neighbour, 0, level); // if label[neighbour] == 0: label[neighbour] = level
@@ -254,6 +271,50 @@ __global__ void gpma_bfs_contract_kernel(SIZE_TYPE *edge_queue, SIZE_TYPE *edge_
         cta_offset += blockDim.x * gridDim.x;
     }
 }
+
+void gpma_bfs_gather_cpu(SIZE_TYPE *node_queue, SIZE_TYPE *_node_queue_len, SIZE_TYPE *edge_queue, SIZE_TYPE *_edge_queue_len, KEY_TYPE *keys, VALUE_TYPE *values, SIZE_TYPE *row_offsets) {
+    auto &node_queue_len = *_node_queue_len;
+    auto &edge_queue_len = *_edge_queue_len;
+
+    //std::atomic<size_t> parallel_push_total_num = 0;
+
+    for(auto i = 0; i < node_queue_len; ++i) {
+        const auto &node = node_queue[i];
+        const auto &row_begin = row_offsets[node];
+        const auto &row_end = row_offsets[node+1];
+        for(auto gather = row_begin; gather < row_end; ++gather) {
+            auto neighbor = (SIZE_TYPE)(keys[gather] & COL_IDX_NONE);
+            auto isValid = (neighbor != COL_IDX_NONE && value[gather] != VALUE_NONE);
+            if(isValid) {
+                // TODO: add lock_guard or use atomic
+                edge_queue[edge_queue_len] = neighbor;
+                ++edge_queue_len;
+            }
+        }
+    }
+}
+void gpma_bfs_contract_cpu(SIZE_TYPE *edge_queue, SIZE_TYPE *_edge_queue_len, SIZE_TYPE *node_queue, SIZE_TYPE *_node_queue_len, SIZE_TYPE level, SIZE_TYPE *label, SIZE_TYPE *bitmap) {
+    auto &node_queue_len = *_node_queue_len;
+    auto &edge_queue_len = *_edge_queue_len;
+    decltype(*label) zero = 0;
+
+    for(auto i = 0; i < edge_queue_len; ++i) {
+        const auto &neighbor = edge_queue[i];
+        // TODO: Also add a small cache here.
+        if(gpma_bitmap_set_return_old(bitmap, neighbor))
+            continue; // this node is not new.
+        // auto exchanged = __atomic_compare_exchange_n(label+neighbor, &zero, level, __ATOMIC_RELAXED, __ATOMIC_RELAXED);
+        // if(!exchanged)
+        if(label[neighbor] != 0)
+            continue; // this node is not new.
+        label[neighbor] = level;
+        { // TODO: add lock_guard or use atomic
+            node_queue[node_queue_len] = neighbor;
+            ++node_queue_len;
+        }
+    }
+}
+
 
 template <dev_type_t DEV>
 __host__ void gpma_bfs(KEY_TYPE *keys, VALUE_TYPE *values, SIZE_TYPE *row_offsets, SIZE_TYPE node_size, SIZE_TYPE edge_size, SIZE_TYPE start_node, SIZE_TYPE *results) {
