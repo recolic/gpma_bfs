@@ -19,7 +19,7 @@ __host__ __device__ inline bool gpma_bitmap_set_return_old(SIZE_TYPE *bitmap, si
     SIZE_TYPE bit_loc = 1 << (bit_offset % 32);
     SIZE_TYPE bit_chunk = bitmap[bit_offset / 32];
     bool old = (bit_chunk & bit_loc);
-    bitmap[bit_offset / 32] = bit_chunk + bit_loc;
+    bitmap[bit_offset / 32] = old ? bit_chunk : bit_chunk + bit_loc;
     return old;
 }
 }
@@ -284,7 +284,7 @@ void gpma_bfs_gather_cpu(SIZE_TYPE *node_queue, SIZE_TYPE *_node_queue_len, SIZE
         const auto &row_end = row_offsets[node+1];
         for(auto gather = row_begin; gather < row_end; ++gather) {
             auto neighbor = (SIZE_TYPE)(keys[gather] & COL_IDX_NONE);
-            auto isValid = (neighbor != COL_IDX_NONE && value[gather] != VALUE_NONE);
+            auto isValid = (neighbor != COL_IDX_NONE && values[gather] != VALUE_NONE);
             if(isValid) {
                 // TODO: add lock_guard or use atomic
                 edge_queue[edge_queue_len] = neighbor;
@@ -296,12 +296,12 @@ void gpma_bfs_gather_cpu(SIZE_TYPE *node_queue, SIZE_TYPE *_node_queue_len, SIZE
 void gpma_bfs_contract_cpu(SIZE_TYPE *edge_queue, SIZE_TYPE *_edge_queue_len, SIZE_TYPE *node_queue, SIZE_TYPE *_node_queue_len, SIZE_TYPE level, SIZE_TYPE *label, SIZE_TYPE *bitmap) {
     auto &node_queue_len = *_node_queue_len;
     auto &edge_queue_len = *_edge_queue_len;
-    decltype(*label) zero = 0;
+    SIZE_TYPE zero = 0;
 
     for(auto i = 0; i < edge_queue_len; ++i) {
         const auto &neighbor = edge_queue[i];
         // TODO: Also add a small cache here.
-        if(gpma_bitmap_set_return_old(bitmap, neighbor))
+        if(impl::gpma_bitmap_set_return_old(bitmap, neighbor))
             continue; // this node is not new.
         // auto exchanged = __atomic_compare_exchange_n(label+neighbor, &zero, level, __ATOMIC_RELAXED, __ATOMIC_RELAXED);
         // if(!exchanged)
@@ -352,19 +352,23 @@ __host__ void gpma_bfs(KEY_TYPE *keys, VALUE_TYPE *values, SIZE_TYPE *row_offset
         if (DEV == GPU) {
             gpma_bfs_gather_kernel<THREADS_NUM><<<BLOCKS_NUM, THREADS_NUM>>>(node_queue, node_queue_offset, edge_queue, edge_queue_offset, keys, values, row_offsets);
         } else {
+            gpma_bfs_gather_cpu(node_queue, node_queue_offset, edge_queue, edge_queue_offset, keys, values, row_offsets);
         }
 
         // contract
         level++;
         anyMemcpy<CPU, DEV>(node_queue_offset, host_num, sizeof(SIZE_TYPE));
         anyMemcpy<DEV, CPU>(host_num, edge_queue_offset, sizeof(SIZE_TYPE));
+        //rlib::println("DEBUG:E:", rlib::printable_iter(native_vector<DEV, SIZE_TYPE>(edge_queue, edge_queue + *host_num)));
         BLOCKS_NUM = CALC_BLOCKS_NUM(THREADS_NUM, host_num[0]);
 
         if (DEV == GPU) {
             gpma_bfs_contract_kernel<THREADS_NUM><<<BLOCKS_NUM, THREADS_NUM>>>(edge_queue, edge_queue_offset, node_queue, node_queue_offset, level, results, bitmap);
         } else {
+            gpma_bfs_contract_cpu(edge_queue, edge_queue_offset, node_queue, node_queue_offset, level, results, bitmap);
         }
         anyMemcpy<DEV, CPU>(host_num, node_queue_offset, sizeof(SIZE_TYPE));
+        //rlib::println("DEBUG:N:", rlib::printable_iter(native_vector<DEV, SIZE_TYPE>(node_queue, node_queue + *host_num)));
 
         if (0 == host_num[0])
             break;
