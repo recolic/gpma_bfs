@@ -9,6 +9,7 @@
 #include <type_traits>
 
 #define MAKE_64b(high, low) (((uint64_t)(high) << 32) + low)
+using namespace rlib::literals;
 
 template <typename T>
 constexpr bool IsPowerOfTwo(T x) {
@@ -136,4 +137,25 @@ void anyExclusiveSum(const SIZE_TYPE *inputVec, SIZE_TYPE *outputVec, SIZE_TYPE 
         cudaExclusiveSum(inputVec, outputVec, len);
     } else
         rlib::exclusiveSumParallel(inputVec, outputVec, len);
+}
+
+template <typename T>
+T &cpuGetZero() {
+    static const T zero = 0;
+    return zero;
+}
+template <typename T>
+T &cpuGetOne() {
+    static const T zero = 1;
+    return zero;
+}
+template <dev_type_t DEV, typename T>
+void anySetVal(T *devPtr, const T &val) {
+    anyMemcpy<CPU, DEV>(devPtr, &val, sizeof(T));
+}
+template <dev_type_t DEV, typename T>
+T anyGetVal(T *devPtr) {
+    T cpuVal;
+    anyMemcpy<DEV, CPU>(&cpuVal, devPtr, sizeof(T));
+    return cpuVal;
 }

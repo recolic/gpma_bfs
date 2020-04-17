@@ -108,7 +108,7 @@ class GPMA {
  *         0x50000001   31
  *         0x00000101   9
  */
-__host__ __device__ [[gnu::always_inline]] SIZE_TYPE fls(SIZE_TYPE x) {
+__host__ __device__ [[gnu::always_inline]] inline SIZE_TYPE fls(SIZE_TYPE x) {
     SIZE_TYPE r = 32;
     if (!x)
         return 0;
@@ -968,6 +968,7 @@ template <dev_type_t DEV>
 __host__ void update_gpma(GPMA<DEV> &gpma, NATIVE_VEC_KEY<DEV> &update_keys, NATIVE_VEC_VALUE<DEV> &update_values) {
     DEBUG_PRINTFLN("DBG: (ENTER UPDATE)update_gpma args, update_keys={}, values={}", rlib::printable_iter(update_keys), rlib::printable_iter(values_for_print(update_values)));
     gpma.print_status("ENTER update_gpma");
+    rlib::printfln("DBG: tree_height={}, update_size={}", gpma.tree_height, update_keys.size());
 
     //LOG_TIME("enter_update_gpma")
 
@@ -1008,7 +1009,6 @@ __host__ void update_gpma(GPMA<DEV> &gpma, NATIVE_VEC_KEY<DEV> &update_keys, NAT
 
     // step5: rebalance each tree level
     for (SIZE_TYPE level = 0; level <= gpma.tree_height && update_size; level++) {
-        rlib::printfln("debug: rebalance tree level {}, tree_height={} update_size={}", level, gpma.tree_height, update_size);
         SIZE_TYPE lower_bound = gpma.lower_element[level];
         SIZE_TYPE upper_bound = gpma.upper_element[level];
 
