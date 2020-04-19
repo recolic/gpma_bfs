@@ -669,17 +669,11 @@ void rebalancing_impl_cpu(SIZE_TYPE unique_update_size, SIZE_TYPE seg_length, SI
 #pragma omp parallel
     {
         // private variables.
-        SIZE_TYPE *compacted_size;
         KEY_TYPE *tmp_keys;
         VALUE_TYPE *tmp_values;
-        SIZE_TYPE *tmp_exscan;
-        SIZE_TYPE *tmp_label;
 
-        anyMalloc<CPU>((void **)&compacted_size, sizeof(SIZE_TYPE));
         anyMalloc<CPU>((void **)&tmp_keys, update_width * sizeof(KEY_TYPE));
         anyMalloc<CPU>((void **)&tmp_values, update_width * sizeof(VALUE_TYPE));
-        anyMalloc<CPU>((void **)&tmp_exscan, update_width * sizeof(SIZE_TYPE));
-        anyMalloc<CPU>((void **)&tmp_label, update_width * sizeof(SIZE_TYPE));
 
 #pragma omp for schedule(dynamic, 8) // this loop is heavy...
         for (SIZE_TYPE i = 0; i < unique_update_size; ++i) {
@@ -688,18 +682,19 @@ void rebalancing_impl_cpu(SIZE_TYPE unique_update_size, SIZE_TYPE seg_length, SI
             VALUE_TYPE *value = values + update_node;
 
             // compact
-            compact_kernel_cpu(update_width, key, value, compacted_size, tmp_keys, tmp_values);
+            SIZE_TYPE compacted_size;
+            compact_kernel_cpu(update_width, key, value, &compacted_size, tmp_keys, tmp_values);
 
             // judge whether fit the density threshold
             SIZE_TYPE interval_a = update_offset[i];
             SIZE_TYPE interval_b = update_offset[i + 1];
             SIZE_TYPE interval_size = interval_b - interval_a;
-            SIZE_TYPE merge_size = (*compacted_size) + interval_size;
+            SIZE_TYPE merge_size = compacted_size + interval_size;
 
             if (lower_bound <= merge_size && merge_size <= upper_bound) {
                 // move
-                memcpy(tmp_keys + (*compacted_size), update_keys + interval_a, interval_size * sizeof(*update_keys));
-                memcpy(tmp_values + (*compacted_size), update_values + interval_a, interval_size * sizeof(*update_values));
+                memcpy(tmp_keys + compacted_size, update_keys + interval_a, interval_size * sizeof(*update_keys));
+                memcpy(tmp_values + compacted_size, update_values + interval_a, interval_size * sizeof(*update_values));
                 //printf("DETAIL DEBUG 4: values[0:6] = %llu %llu %llu %llu %llu %llu\n", values[0], values[1], values[2], values[3], values[4], values[5]);
                 //printf("DETAIL DEBUG 4: update_values[0:6] = %llu %llu %llu %llu %llu %llu\n", update_values[0], update_values[1], update_values[2], update_values[3], update_values[4], update_values[5]);
 
@@ -707,10 +702,8 @@ void rebalancing_impl_cpu(SIZE_TYPE unique_update_size, SIZE_TYPE seg_length, SI
                 std::fill(update_nodes + interval_a, update_nodes + interval_a + interval_size, SIZE_NONE);
                 thrust::sort_by_key(thrust::host, tmp_keys, tmp_keys + merge_size, tmp_values);
                 // In original cub_sort_by_key, tmp_key should be equal to key(sorted), tmp_value should equal to value(sorted).
-                // TODO: conflict|| std::copy(key, key + merge_size, tmp_key);
-                std::copy(tmp_keys, tmp_keys + merge_size, key); // TODO: thread conflict!
-                // TODO: conflict|| std::copy(value, value + merge_size, tmp_value);
-                std::copy(tmp_values, tmp_values + merge_size, value);
+                // std::copy(tmp_keys, tmp_keys + merge_size, key); // TODO: thread conflict!
+                // std::copy(tmp_values, tmp_values + merge_size, value);
 
                 //printf("DETAIL DEBUG 3: values[0:6] = %llu %llu %llu %llu %llu %llu\n", values[0], values[1], values[2], values[3], values[4], values[5]);
                 //printf("DETAIL DEBUG 3: tmp_values[0:6] = %llu %llu %llu %llu %llu %llu\n", tmp_values[0], tmp_values[1], tmp_values[2], tmp_values[3], tmp_values[4], tmp_values[5]);
@@ -725,11 +718,8 @@ void rebalancing_impl_cpu(SIZE_TYPE unique_update_size, SIZE_TYPE seg_length, SI
             }
         }
 
-        anyFree<CPU>(compacted_size);
         anyFree<CPU>(tmp_keys);
         anyFree<CPU>(tmp_values);
-        anyFree<CPU>(tmp_exscan);
-        anyFree<CPU>(tmp_label);
     } // omp parallel end
 
     // COPY_PASTED from rebalancing_kernel END
