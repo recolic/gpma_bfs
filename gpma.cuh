@@ -549,6 +549,7 @@ __global__ void label_key_whether_none_kernel(SIZE_TYPE *label, KEY_TYPE *keys, 
 
 void copy_compacted_kv_cpu(SIZE_TYPE *exscan, KEY_TYPE *keys, VALUE_TYPE *values, SIZE_TYPE size, KEY_TYPE *tmp_keys, VALUE_TYPE *tmp_values, SIZE_TYPE *compacted_size) {
     // COPY_PASTED from copy_compacted_kv_kernel BEGIN
+    // set compacted_size, copy keys to tmp_keys, values => tmp_values. The fucking tmp_* are RESULTS.
 #pragma omp parallel for schedule(static)
     for (SIZE_TYPE i = 0; i < size; ++i) {
         if (i == size - 1)
@@ -598,15 +599,25 @@ __global__ void copy_compacted_kv_kernel(SIZE_TYPE *exscan, KEY_TYPE *keys, VALU
     }
 }
 
-void compact_kernel_cpu(SIZE_TYPE size, KEY_TYPE *keys, VALUE_TYPE *values, SIZE_TYPE *compacted_size, KEY_TYPE *tmp_keys, VALUE_TYPE *tmp_values, SIZE_TYPE *exscan, SIZE_TYPE *label) {
-    // working
-#pragma omp parallel for schedule(static)
-    for (SIZE_TYPE i = 0; i < size; ++i) {
-        label[i] = (keys[i] == KEY_NONE || values[i] == VALUE_NONE) ? 0 : 1;
+void compact_kernel_cpu(SIZE_TYPE size, KEY_TYPE *keys, VALUE_TYPE *values, SIZE_TYPE *output_size, KEY_TYPE *output_keys, VALUE_TYPE *output_values) {
+    // input: sorted. output: sorted.
+    size_t output_cter = 0;
+    for(auto i = 0; i < size; ++i) {
+        bool invalid = (keys[i] == KEY_NONE || values[i] == VALUE_NONE);
+        if(!invalid) {
+            output_keys[output_cter] = keys[i];
+            output_values[output_cter] = values[i];
+            ++output_cter;
+        }
     }
-
-    anyExclusiveSum<CPU>(label, exscan, size);
-    copy_compacted_kv_cpu(exscan, keys, values, size, tmp_keys, tmp_values, compacted_size);
+    *output_size = output_cter;
+    return;
+//#pragma omp parallel for schedule(static)
+//    for (SIZE_TYPE i = 0; i < size; ++i) {
+//        label[i] = (keys[i] == KEY_NONE || values[i] == VALUE_NONE) ? 0 : 1;
+//    }
+//    anyExclusiveSum<CPU>(label, exscan, size);
+//    copy_compacted_kv_cpu(exscan, keys, values, size, tmp_keys, tmp_values, compacted_size);
 }
 __device__ void compact_kernel_gpu(SIZE_TYPE size, KEY_TYPE *keys, VALUE_TYPE *values, SIZE_TYPE *compacted_size, KEY_TYPE *tmp_keys, VALUE_TYPE *tmp_values, SIZE_TYPE *exscan, SIZE_TYPE *label) {
     SIZE_TYPE THREADS_NUM = 32;
@@ -677,7 +688,7 @@ void rebalancing_impl_cpu(SIZE_TYPE unique_update_size, SIZE_TYPE seg_length, SI
             VALUE_TYPE *value = values + update_node;
 
             // compact
-            compact_kernel_cpu(update_width, key, value, compacted_size, tmp_keys, tmp_values, tmp_exscan, tmp_label);
+            compact_kernel_cpu(update_width, key, value, compacted_size, tmp_keys, tmp_values);
 
             // judge whether fit the density threshold
             SIZE_TYPE interval_a = update_offset[i];
