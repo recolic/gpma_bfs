@@ -61,21 +61,25 @@ __host__ inline void gpma_queue_merge(SIZE_TYPE *cpu_queue, SIZE_TYPE *gpu_queue
 
 template <size_t cpus, size_t gpus>
 struct multidev_bfs_data {
-    static_assert(cpus < 2 && gpus < 2, "Current code shares the same bitmap/nodeQ/edgeQ for all CPUs. Also share them for all GPUs. So at most 1 cpu/gpu allowed.");
+    static_assert(/*cpus < 2 && */gpus < 2, "Current code shares the same bitmap/nodeQ/edgeQ for all CPUs. Also share them for all GPUs. So at most 1 cpu/gpu allowed. cba97278");
     native_vector<CPU, SIZE_TYPE> cpu_results, cpu_bitmap, cpu_nodeQ, cpu_edgeQ;
     native_vector<GPU, SIZE_TYPE> gpu_results, gpu_bitmap, gpu_nodeQ, gpu_edgeQ;
     SIZE_TYPE cpu_nodeQ_size = 0, cpu_edgeQ_size = 0;
     SIZE_TYPE *gpu_nodeQ_size, *gpu_edgeQ_size;
+
+    static constexpr size_t _cpus = cpus;
 
     static constexpr size_t get_bitmap_size(size_t node_size) {
         return ((node_size - 1) / sizeof(SIZE_TYPE) + 1); // in nSIZE_T s, rather than bytes/bits.
     }    
     multidev_bfs_data(size_t node_size, size_t edge_size)
         : cpu_results(node_size, 0), gpu_results(node_size, 0),
-          cpu_nodeQ(2*node_size), gpu_nodeQ(2*node_size),
-          cpu_edgeQ(2*edge_size), gpu_edgeQ(2*edge_size),
+          cpu_nodeQ(3*node_size), gpu_nodeQ(3*node_size),
+          cpu_edgeQ(3*edge_size), gpu_edgeQ(3*edge_size),
           cpu_bitmap(get_bitmap_size(node_size), 0), gpu_bitmap(get_bitmap_size(node_size), 0),
-          online_guys(cpus + gpus), barrier(cpus + gpus), select_one_thread(false) {
+          online_guys(cpus + gpus), barrier(2), select_one_thread(false) {
+     // currently the barrier is initialized as 2 threads (1 for cpu and 1 for gpu). If you have bfs fully parallelized for multi-cpu/gpu, 
+     // you may use cpus+gpus threads here. cba97278
         anyMalloc<GPU>((void**)&gpu_nodeQ_size, sizeof(SIZE_TYPE));
         anyMalloc<GPU>((void**)&gpu_edgeQ_size, sizeof(SIZE_TYPE));
         anyMemcpy<CPU, GPU>(gpu_nodeQ_size, &cpu_nodeQ_size, sizeof(SIZE_TYPE));
@@ -439,14 +443,11 @@ void gpma_bfs_contract_cpu(SIZE_TYPE *edge_queue, SIZE_TYPE *_edge_queue_len, SI
 }
 
 
-template <dev_type_t DEV, typename multidev_data_t>
-__host__ void gpma_bfs_multidev_single(KEY_TYPE *keys, VALUE_TYPE *values, SIZE_TYPE *row_offsets, SIZE_TYPE node_size, SIZE_TYPE edge_size, SIZE_TYPE start_node, multidev_data_t &multidev_mgr, size_t dev_id) {
-    SIZE_TYPE *results; 
-    SIZE_TYPE *bitmap; 
-    SIZE_TYPE *node_queue; 
-    SIZE_TYPE *node_queue_size;
-    SIZE_TYPE *edge_queue; 
-    SIZE_TYPE *edge_queue_size;
+template <dev_type_t DEV, typename multidev_data_t, typename multidev_gpma_t>
+__host__ void gpma_bfs_multidev_single(SIZE_TYPE node_size, SIZE_TYPE edge_size, SIZE_TYPE start_node, multidev_data_t &multidev_mgr, const multidev_gpma_t &gpma, size_t dev_id, size_t count = 1) {
+    // If count is larger than 1, This function deal with [dev_id, dev_id+count) in SERIAL, not PARALLALIZED! Search for d5fb72b0 and cba97278 if you want to parallelize it.
+    // If you want to parallelize it, you should just lock edge_queue. there's no need to lock bitmap, node_queue...
+    SIZE_TYPE *results, *bitmap, *node_queue, *node_queue_size, *edge_queue, *edge_queue_size;
     if(DEV == CPU) {
         results = RAW_PTR(multidev_mgr.cpu_results);
         bitmap = RAW_PTR(multidev_mgr.cpu_bitmap);
@@ -464,7 +465,8 @@ __host__ void gpma_bfs_multidev_single(KEY_TYPE *keys, VALUE_TYPE *values, SIZE_
         edge_queue_size = multidev_mgr.gpu_edgeQ_size;
     }
 
-    // init // TODO: if using multiCPU/multiGPU, the code block below is not allowed anymore.
+
+    // init // TODO: if using multiCPU/multiGPU in parallel, the code block below is not allowed anymore. d5fb72b0
     anySetVal<DEV>(node_queue, start_node);
     anySetVal<DEV>(&bitmap[start_node / 32], 1u << (start_node % 32));
     anySetVal<DEV>(node_queue_size, 1u);
@@ -476,10 +478,14 @@ __host__ void gpma_bfs_multidev_single(KEY_TYPE *keys, VALUE_TYPE *values, SIZE_
         // gather
         SIZE_TYPE BLOCKS_NUM = CALC_BLOCKS_NUM(THREADS_NUM, anyGetVal<DEV>(node_queue_size));
         anySetVal<DEV>(edge_queue_size, 0u);
-        if (DEV == GPU) {
-            gpma_bfs_gather_kernel<THREADS_NUM><<<BLOCKS_NUM, THREADS_NUM>>>(node_queue, node_queue_size, edge_queue, edge_queue_size, keys, values, row_offsets);
-        } else {
-            gpma_bfs_gather_cpu(node_queue, node_queue_size, edge_queue, edge_queue_size, keys, values, row_offsets);
+        for(auto cter = 0; cter < count; ++cter) {
+            if (DEV == GPU) {
+                auto *gpma_impl = gpma.ptrs_gpu[dev_id + cter - multidev_mgr._cpus];
+                gpma_bfs_gather_kernel<THREADS_NUM><<<BLOCKS_NUM, THREADS_NUM>>>(node_queue, node_queue_size, edge_queue, edge_queue_size, RAW_PTR(gpma_impl->keys), RAW_PTR(gpma_impl->values), RAW_PTR(gpma_impl->row_offset));
+            } else {
+                auto *gpma_impl = gpma.ptrs_cpu[dev_id + cter];
+                gpma_bfs_gather_cpu(node_queue, node_queue_size, edge_queue, edge_queue_size, RAW_PTR(gpma_impl->keys), RAW_PTR(gpma_impl->values), RAW_PTR(gpma_impl->row_offset));
+            }
         }
         multidev_mgr.iteration_barrier_1(dev_id);
 
@@ -511,16 +517,15 @@ __host__ void gpma_bfs(const KEY_TYPE *keys, const VALUE_TYPE *values, const SIZ
 template <size_t cpu_n, size_t gpu_n>
 __host__ void gpma_bfs(const GPMA_multidev<cpu_n, gpu_n> &gpma, SIZE_TYPE node_size, SIZE_TYPE edge_size, SIZE_TYPE start_node, SIZE_TYPE *results) {
     impl::multidev_bfs_data<cpu_n, gpu_n> data(node_size, edge_size);
-#pragma omp parallel for num_threads(cpu_n + gpu_n)
-    for(size_t dev_id = 0; dev_id < cpu_n + gpu_n; ++dev_id) {
-        if(dev_id < cpu_n) {
-            auto *gpma_impl = gpma.ptrs_cpu[dev_id];
-            gpma_bfs_multidev_single<CPU>(RAW_PTR(gpma_impl->keys), RAW_PTR(gpma_impl->values), RAW_PTR(gpma_impl->row_offset), node_size, edge_size, start_node, data, dev_id);
+#pragma omp parallel for num_threads(2)
+    for(size_t cpuORgpu = 0; cpuORgpu < 2; ++cpuORgpu) {
+        if(cpuORgpu == 0) {
+            // CPU Deals [0, cpu_n)
+            gpma_bfs_multidev_single<CPU>(node_size, edge_size, start_node, data, gpma, 0, cpu_n);
         }
         else {
-            auto gpu_dev_id = dev_id - cpu_n;
-            auto *gpma_impl = gpma.ptrs_gpu[gpu_dev_id];
-            gpma_bfs_multidev_single<GPU>(RAW_PTR(gpma_impl->keys), RAW_PTR(gpma_impl->values), RAW_PTR(gpma_impl->row_offset), node_size, edge_size, start_node, data, dev_id);
+            // GPU deals [cpu_n, cpu_n+gpu_n)
+            gpma_bfs_multidev_single<GPU>(node_size, edge_size, start_node, data, gpma, cpu_n, gpu_n);
         }
     }
 
