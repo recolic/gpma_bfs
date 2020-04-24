@@ -33,6 +33,7 @@ namespace gpma_impl {
             : mapKeyToSlot(hashSize, (size_t)(-1)) {}
 
         // void init(const CpuArrT &ptrs_cpu, const GpuArrT &ptrs_gpu) {}
+        static constexpr size_t gpu_factor = 7; // 1 GPU is equals to 7 CPU.
 
         // Given KEY, returns the ID(offset from zero) of device, which is responsible to this KEY.
         [[gnu::always_inline]] size_t select_device(const KEY_TYPE &k) {
@@ -41,7 +42,8 @@ namespace gpma_impl {
             auto dev_id = mapKeyToSlot.get(hashKey);
             if(dev_id == (size_t)(-1)) {
                 // appoint a device for a new hash.
-                dev_id = hashKey % (cpu_instances + gpu_instances);
+                dev_id = hashKey % (cpu_instances + gpu_instances * gpu_factor);
+                dev_id = (dev_id > cpu_instances) ? ( cpu_instances + (dev_id-cpu_instances)/gpu_factor ) : dev_id;
                 // Add link: hashKey => dev_id
                 return mapKeyToSlot.set(hashKey, dev_id);
             }

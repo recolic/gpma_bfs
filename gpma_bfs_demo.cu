@@ -38,11 +38,8 @@ int main(int argc, char **argv) {
     char *data_path = argv[1];
     int bfs_start_node = std::atoi(argv[2]);
 
-#if CUDA_SM >= 60
-    // heap size limit is KNOWN to be required at SM_75(Tesla T4),SM_61(Tesla P4), and KNOWN to be forbidden at SM_50(GEForce 750).
-    cudaDeviceSetLimit(cudaLimitMallocHeapSize, 1024ll * 1024 * 1024);
+    cudaDeviceSetLimit(cudaLimitMallocHeapSize, 1024ll * 1024 * 700);
     cudaDeviceSetLimit(cudaLimitDevRuntimeSyncDepth, 5);
-#endif
 
     thrust::host_vector<int> host_x;
     thrust::host_vector<int> host_y;
@@ -64,7 +61,8 @@ int main(int argc, char **argv) {
     int step = half / num_slide;
 
     LOG_TIME("before init_csr_gpma")
-    GPMA_multidev<1, 1> gpma(node_size);
+    constexpr size_t cpu_count = 4;
+    GPMA_multidev<cpu_count-1, 1> gpma(node_size);
     cudaDeviceSynchronize();
 
     LOG_TIME("before update_gpma 1")
