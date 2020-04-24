@@ -26,8 +26,6 @@ namespace gpma_impl {
 
     template <size_t cpu_instances, size_t gpu_instances>
     struct dispatcher {
-        using CpuArrT = std::array<GPMA<CPU> *, cpu_instances>;
-        using GpuArrT = std::array<GPMA<GPU> *, gpu_instances>;
         static constexpr KEY_TYPE hashSize = 1024;
 
         quick_1way_hash_table<KEY_TYPE, size_t> mapKeyToSlot;
@@ -38,6 +36,7 @@ namespace gpma_impl {
 
         // Given KEY, returns the ID(offset from zero) of device, which is responsible to this KEY.
         [[gnu::always_inline]] size_t select_device(const KEY_TYPE &k) {
+            if(cpu_instances + gpu_instances == 1) return 0;
             auto hashKey = k % hashSize;
             auto dev_id = mapKeyToSlot.get(hashKey);
             if(dev_id == (size_t)(-1)) {
@@ -103,33 +102,31 @@ struct GPMA_multidev {
         if(update_keys.size() != update_values.size())
             throw std::invalid_argument("Inconsistant kv size.");
 
-        gpma_impl::thread_safe_kv_buf<CPU, cpu_instances> cpu_buffers(update_keys.size());
+        gpma_impl::thread_safe_kv_buf<CPU, cpu_instances + gpu_instances> cpu_buffers(update_keys.size());
         gpma_impl::thread_safe_kv_buf<GPU, gpu_instances> gpu_buffers(update_keys.size());
 
 // #pragma omp parallel for schedule(static) // not supporting parallel push back
         for(auto i = 0; i < update_keys.size(); ++i) {
             auto dev_id = dispatcher.select_device(update_keys[i]);
             //rlib::printfln("PUSH, dev_id={}, i={}, k={}, v={}.", dev_id, i, update_keys[i], update_values[i]);
-            if(dev_id < cpu_instances) {
-                cpu_buffers.push_back(dev_id, update_keys[i], update_values[i]);
-            }
-            else {
-                gpu_buffers.push_back(dev_id - cpu_instances, update_keys[i], update_values[i]);
-            }
+            // Fill cpu buffers.
+            cpu_buffers.push_back(dev_id, update_keys[i], update_values[i]);
         }
-        // Maybe this barrier could be removed in the future.
-        // Push GPU data, Run GPU update(in background).
-        // Push CPU data, Run CPU update. Then check if GPU has done.
+        for(auto dev_id = 0; dev_id < cpu_instances + gpu_instances; ++dev_id) {
+            cpu_buffers.k_buffers[dev_id].resize(cpu_buffers.sizes[dev_id]);
+            cpu_buffers.v_buffers[dev_id].resize(cpu_buffers.sizes[dev_id]);
+        }
 
-        anySync<GPU>();
 
 #pragma omp parallel for schedule(dynamic)
         for(auto dev_id = 0; dev_id < instances; ++dev_id) {
             if(dev_id < cpu_instances)
                 ::update_gpma(*(ptrs_cpu[dev_id]), cpu_buffers.k_buffers[dev_id], cpu_buffers.v_buffers[dev_id]);
             else {
-                auto gpu_dev_id = dev_id - cpu_instances;
-                ::update_gpma(*(ptrs_gpu[gpu_dev_id]), gpu_buffers.k_buffers[gpu_dev_id], gpu_buffers.v_buffers[gpu_dev_id]);
+                NATIVE_VEC_KEY<GPU> gpu_k_buf (cpu_buffers.k_buffers[dev_id]);
+                NATIVE_VEC_VALUE<GPU> gpu_v_buf (cpu_buffers.v_buffers[dev_id]);
+                auto gpu_id = dev_id - cpu_instances;
+                ::update_gpma(*(ptrs_gpu[gpu_id]), gpu_k_buf, gpu_v_buf);
             }
         }
         // barrier.
