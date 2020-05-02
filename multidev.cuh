@@ -32,8 +32,11 @@ namespace gpma_impl {
         dispatcher()
             : mapKeyToSlot(hashSize, (size_t)(-1)) {}
 
+#ifndef TEST_GPU_FACTOR
+#define TEST_GPU_FACTOR 7
+#endif
         // void init(const CpuArrT &ptrs_cpu, const GpuArrT &ptrs_gpu) {}
-        static constexpr size_t gpu_factor = 7; // 1 GPU is equals to 7 CPU.
+        static constexpr size_t gpu_factor = TEST_GPU_FACTOR; // 1 GPU is equals to 7 CPU.
 
         // Given KEY, returns the ID(offset from zero) of device, which is responsible to this KEY.
         [[gnu::always_inline]] size_t select_device(const KEY_TYPE &k) {
