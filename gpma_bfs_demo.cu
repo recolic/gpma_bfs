@@ -62,7 +62,11 @@ int main(int argc, char **argv) {
 
     LOG_TIME("before init_csr_gpma")
     constexpr size_t cpu_count = 4;
-    GPMA_multidev<cpu_count-1, 1> gpma(node_size);
+#ifndef TEST_CPUS
+#define TEST_CPUS cpu_count-1
+#define TEST_GPUS 1
+#endif
+    GPMA_multidev<TEST_CPUS, TEST_GPUS> gpma(node_size);
     cudaDeviceSynchronize();
 
     LOG_TIME("before update_gpma 1")
@@ -71,9 +75,11 @@ int main(int argc, char **argv) {
     cudaDeviceSynchronize();
 
     LOG_TIME("before first bfs")
+#ifndef _DISABLE_BFS
     gpma_bfs(gpma, node_size, edge_size, bfs_start_node, RAW_PTR(bfs_result));
     int reach_nodes = node_size - thrust::count(bfs_result.begin(), bfs_result.end(), 0);
     printf("start from node %d, number of reachable nodes: %d\n", bfs_start_node, reach_nodes);
+#endif
 
     LOG_TIME("before main loop")
     for (int i = 0; i < num_slide; i++) {
@@ -99,9 +105,11 @@ int main(int argc, char **argv) {
     printf("Graph is updated.\n");
     LOG_TIME("before second bfs")
 
+#ifndef _DISABLE_BFS
     gpma_bfs(gpma, node_size, edge_size, bfs_start_node, RAW_PTR(bfs_result));
     reach_nodes = node_size - thrust::count(bfs_result.begin(), bfs_result.end(), 0);
     printf("start from node %d, number of reachable nodes: %d\n", bfs_start_node, reach_nodes);
+#endif
     LOG_TIME("after second bfs")
 
     return 0;

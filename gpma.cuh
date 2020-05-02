@@ -969,7 +969,7 @@ template <dev_type_t DEV>
 __host__ void update_gpma(GPMA<DEV> &gpma, NATIVE_VEC_KEY<DEV> &update_keys, NATIVE_VEC_VALUE<DEV> &update_values) {
     DEBUG_PRINTFLN("DBG: (ENTER UPDATE)update_gpma args, update_keys={}, values={}", rlib::printable_iter(update_keys), rlib::printable_iter(values_for_print(update_values)));
     gpma.print_status("ENTER update_gpma");
-    rlib::printfln("DBG: tree_height={}, update_size={}", gpma.tree_height, update_keys.size());
+    // rlib::printfln("DBG: tree_height={}, update_size={}", gpma.tree_height, update_keys.size());
 
     //LOG_TIME("enter_update_gpma")
 
@@ -1046,5 +1046,5 @@ __host__ void update_gpma(GPMA<DEV> &gpma, NATIVE_VEC_KEY<DEV> &update_keys, NAT
 
     anySync<DEV>();
     gpma.print_status("LEAVE update_gpma");
-    rlib::printfln("DBG: (LEAVE UPDATE) =====================================================================================");
+    //rlib::printfln("DBG: (LEAVE UPDATE) =====================================================================================");
 }

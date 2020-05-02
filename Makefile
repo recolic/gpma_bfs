@@ -9,7 +9,8 @@ TEST_DEV ?= GPU
 
 OMP_FLAGS = -Xcompiler -fopenmp
 
-NVFLAGS = -I. -O3 -std=c++14 -DCUDA_SM=$(SM) -arch sm_$(SM) --relocatable-device-code=true --extended-lambda $(OMP_FLAGS) -g
+EXTRA_FLAGS ?= -g
+NVFLAGS = -I. -O3 -std=c++14 -DCUDA_SM=$(SM) -arch sm_$(SM) --relocatable-device-code=true --extended-lambda $(OMP_FLAGS) $(EXTRA_FLAGS)
 
 default:
 	$(NVCC) $(NVFLAGS) gpma_bfs_demo.cu -o gpma_bfs_demo -lgomp
