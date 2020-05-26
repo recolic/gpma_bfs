@@ -1,4 +1,7 @@
 #!/bin/bash
+# Usage: ./prepare.sh 100
+# Usage: ./prepare.sh 10000
+# Usage: ./prepare.sh 999999999999
 
 NODE_MAX="$1"
 [[ $NODE_MAX = "" ]] && NODE_MAX=999999999
